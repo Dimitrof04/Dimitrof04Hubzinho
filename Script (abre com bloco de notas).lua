@@ -24,6 +24,8 @@ ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
 ScreenGui.ResetOnSpawn = false
 ScreenGui.IgnoreGuiInset = true
 
+script.Parent = ScreenGui
+
 -- --- Variáveis de Estado ---
 local ESP_Enabled = false
 local Aimbot_Enabled = false
@@ -63,7 +65,7 @@ local Title = Instance.new("TextLabel")
 Title.Size = UDim2.new(1, -100, 1, 0)
 Title.Position = UDim2.new(0, 15, 0, 0)
 Title.BackgroundTransparency = 1
-Title.Text = "Dimitrof04 ;3 (V6)"
+Title.Text = "~ Dimitrof04 Hub (V2) ~ "
 Title.TextColor3 = Color3.fromRGB(255, 255, 255)
 Title.TextXAlignment = Enum.TextXAlignment.Left
 Title.Font = Enum.Font.GothamBold
@@ -115,6 +117,16 @@ SetupPage(FPSPage)
 local function OpenTab(tabName)
 	LocalPlayerPage.Visible = (tabName == "LocalPlayer")
 	FPSPage.Visible = (tabName == "FPS")
+end
+
+local function AutoShoot()
+	local char = LocalPlayer.Character
+	if not char then return end
+
+	local tool = char:FindFirstChildOfClass("Tool")
+	if tool then
+		tool:Activate()
+	end
 end
 
 local function CreateTabBtn(text, target)
@@ -236,7 +248,7 @@ local function UpdatePlayerList()
 			pBtn.Font = Enum.Font.Gotham
 			pBtn.TextSize = 12
 			Instance.new("UICorner", pBtn)
-			
+
 			pBtn.MouseButton1Click:Connect(function()
 				TPInput.Text = p.Name
 			end)
@@ -252,62 +264,71 @@ UpdatePlayerList()
 local ESPBtn = CreateButton("ESP: OFF", FPSPage)
 local AimbotBtn = CreateButton("Aimbot: OFF", FPSPage)
 local HitboxBtn = CreateButton("Hitbox Gigante: OFF", FPSPage)
-local AutoFireBtn = CreateButton("AutoFire: OFF", FPSPage)
+--local AutoFireBtn = CreateButton("AutoFire: OFF", FPSPage)
+
+ESPBtn.MouseButton1Click:Connect(function()
+	ESP_Enabled = not ESP_Enabled
+	ESPBtn.Text = "ESP: " .. (ESP_Enabled and "ON" or "OFF")
+end)	
 
 -- --- LÓGICA DE MOVIMENTAÇÃO ---
 
 -- Fly System
 local flyKeyDown, flyKeyUp
-FlyBtn.MouseButton1Click:Connect(function()
-	Fly_Enabled = not Fly_Enabled
-	FlyBtn.Text = "Voo (Fly): " .. (Fly_Enabled and "ON" or "OFF")
-	FlyBtn.BackgroundColor3 = Fly_Enabled and Color3.fromRGB(0, 120, 255) or Color3.fromRGB(35, 35, 35)
-	
+
+-- WalkSpeed / JumpPower
+SpeedInput.FocusLost:Connect(function()
+	WalkSpeed_Value = tonumber(SpeedInput.Text) or 16
+
 	local char = LocalPlayer.Character
-	if not char or not char:FindFirstChild("HumanoidRootPart") then return end
-	
-	if Fly_Enabled then
-		local bv = Instance.new("BodyVelocity", char.HumanoidRootPart)
-		bv.Name = "FlyVelocity"
-		bv.Velocity = Vector3.new(0, 0, 0)
-		bv.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
-		
-		local bg = Instance.new("BodyGyro", char.HumanoidRootPart)
-		bg.Name = "FlyGyro"
-		bg.P = 9e4
-		bg.MaxTorque = Vector3.new(math.huge, math.huge, math.huge)
-		bg.CFrame = char.HumanoidRootPart.CFrame
-		
-		task.spawn(function()
-			while Fly_Enabled and char:FindFirstChild("HumanoidRootPart") do
-				local moveDir = char.Humanoid.MoveDirection
-				local flyVel = moveDir * FlySpeed
-				
-				if UserInputService:IsKeyDown(Enum.KeyCode.Space) then
-					flyVel = flyVel + Vector3.new(0, FlySpeed, 0)
-				elseif UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) then
-					flyVel = flyVel + Vector3.new(0, -FlySpeed, 0)
-				end
-				
-				bv.Velocity = flyVel
-				bg.CFrame = Camera.CFrame
-				RunService.RenderStepped:Wait()
-			end
-			bv:Destroy()
-			bg:Destroy()
-		end)
+	if char and char:FindFirstChild("Humanoid") then
+		char.Humanoid.WalkSpeed = WalkSpeed_Value
 	end
 end)
 
--- WalkSpeed / JumpPower
-SpeedInput.FocusLost:Connect(function() WalkSpeed_Value = tonumber(SpeedInput.Text) or 16 end)
-JumpInput.FocusLost:Connect(function() JumpPower_Value = tonumber(JumpInput.Text) or 50 end)
+JumpInput.FocusLost:Connect(function()
+	JumpPower_Value = tonumber(JumpInput.Text) or 50
+
+	local char = LocalPlayer.Character
+	if char and char:FindFirstChild("Humanoid") then
+		char.Humanoid.JumpPower = JumpPower_Value
+	end
+end)
+
+HitboxBtn.MouseButton1Click:Connect(function()
+	Hitbox_Enabled = not Hitbox_Enabled
+	HitboxBtn.Text = "Hitbox Gigante: " .. (Hitbox_Enabled and "ON" or "OFF")
+end)
 
 RunService.Heartbeat:Connect(function()
 	local char = LocalPlayer.Character
 	if char and char:FindFirstChild("Humanoid") then
 		char.Humanoid.WalkSpeed = WalkSpeed_Value
 		char.Humanoid.JumpPower = JumpPower_Value
+		char.Humanoid.UseJumpPower = true
+	end
+	if Hitbox_Enabled then
+		for _, p in pairs(Players:GetPlayers()) do
+			if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+				local hrp = p.Character.HumanoidRootPart
+				hrp.Size = Vector3.new(10,10,10)
+				hrp.Transparency = 0.7
+				hrp.BrickColor = BrickColor.new("Really red")
+				hrp.Material = Enum.Material.Neon
+				hrp.CanCollide = false
+				
+				if Hitbox_Enabled then
+					hrp.Size = Vector3.new(10,10,10)
+					hrp.Transparency = 0.7
+					hrp.Material = Enum.Material.Neon
+					hrp.CanCollide = false
+				else
+					hrp.Size = Vector3.new(2,2,1)
+					hrp.Transparency = 0
+					hrp.Material = Enum.Material.Plastic
+				end
+			end
+		end
 	end
 end)
 
@@ -375,12 +396,61 @@ local function GetClosestPlayer()
 	return closest
 end
 
+--[[AutoFireBtn.MouseButton1Click:Connect(function()
+	AutoFire_Enabled = not AutoFire_Enabled
+	AutoFireBtn.Text = "AutoFire: " .. (AutoFire_Enabled and "ON" or "OFF")
+end)]]
+
 RunService.RenderStepped:Connect(function()
+
+	-- AIMBOT
 	if Aimbot_Enabled then
 		local target = GetClosestPlayer()
-		if target and target.Character:FindFirstChild("Head") then
+		if target and target.Character and target.Character:FindFirstChild("Head") then
 			Camera.CFrame = CFrame.new(Camera.CFrame.Position, target.Character.Head.Position)
 		end
+	end
+
+	-- ESP
+	for _, p in pairs(Players:GetPlayers()) do
+		if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("Head") then
+
+			if ESP_Enabled then
+				if not p.Character.Head:FindFirstChild("ESP") then
+					local bill = Instance.new("BillboardGui", p.Character.Head)
+					bill.Name = "ESP"
+					bill.Size = UDim2.new(0,100,0,40)
+					bill.AlwaysOnTop = true
+
+					local txt = Instance.new("TextLabel", bill)
+					txt.Size = UDim2.new(1,0,1,0)
+					txt.Text = p.Name
+					txt.TextColor3 = Color3.new(1,0,0)
+					txt.BackgroundTransparency = 1
+					
+					local bill2 = Instance.new("BillboardGui", p.Character.HumanoidRootPart)
+					bill2.Name = "ESP"
+					bill2.Size = UDim2.new(2,0,3,0)
+					bill2.AlwaysOnTop = true
+					
+					local Frame = Instance.new("Frame", bill2)
+					Frame.Size = UDim2.new(1,0,1,0)
+					Frame.BackgroundTransparency = 0.75
+					Frame.BackgroundColor3 = Color3.new(1,0,0)
+					Frame.Name = "ESP"
+				end
+			else
+				if p.Character.Head:FindFirstChild("ESP") then
+					p.Character.Head.ESP:Destroy()
+					p.Character.HumanoidRootPart.ESP:Destroy()
+				end
+			end
+		end
+	end
+	-- AUTO FIRE
+	if AutoFire_Enabled then
+		AutoShoot()
+		task.wait(0.05)
 	end
 end)
 
@@ -409,4 +479,49 @@ end)
 
 CloseBtn.MouseButton1Click:Connect(function() ScreenGui:Destroy() end)
 
-print("Dimitrof04 Hub V6 Carregado - Use 'J' para ocultar")
+FlyBtn.MouseButton1Click:Connect(function()
+	Fly_Enabled = not Fly_Enabled
+	FlyBtn.Text = "Voo (Fly): " .. (Fly_Enabled and "ON" or "OFF")
+	FlyBtn.BackgroundColor3 = Fly_Enabled and Color3.fromRGB(0, 120, 255) or Color3.fromRGB(35, 35, 35)
+
+	local char = LocalPlayer.Character
+	if not char or not char:FindFirstChild("HumanoidRootPart") then return end
+
+	if Fly_Enabled then
+		local bv = Instance.new("BodyVelocity", char.HumanoidRootPart)
+		bv.Name = "FlyVelocity"
+		bv.Velocity = Vector3.new(0, 0, 0)
+		bv.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
+
+		local bg = Instance.new("BodyGyro", char.HumanoidRootPart)
+		bg.Name = "FlyGyro"
+		bg.P = 9e4
+		bg.MaxTorque = Vector3.new(math.huge, math.huge, math.huge)
+		bg.CFrame = char.HumanoidRootPart.CFrame
+
+		task.spawn(function()
+			while Fly_Enabled and char:FindFirstChild("HumanoidRootPart") do
+				if char:FindFirstChild("Humanoid") then
+					local moveDir = char.Humanoid.MoveDirection
+
+					local flyVel = moveDir * FlySpeed
+
+					if UserInputService:IsKeyDown(Enum.KeyCode.Space) then
+						flyVel = flyVel + Vector3.new(0, FlySpeed, 0)
+					elseif UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) then
+						flyVel = flyVel + Vector3.new(0, -FlySpeed, 0)
+					end
+
+					bv.Velocity = flyVel
+					bg.CFrame = Camera.CFrame
+					RunService.RenderStepped:Wait()
+				end
+			end
+			bv:Destroy()
+			bg:Destroy()
+		end)
+	end
+end)
+
+print("Dimitrof04 Hub V2 Carregado - Use 'J' para ocultar")
+print("Fly : WASD move L-s abaixar Space Subir")
