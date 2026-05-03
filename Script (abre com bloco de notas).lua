@@ -4,7 +4,7 @@
     1. LocalPlayer (Movimentação & Fly)
     2. FPS (Combate)
 ]]
-
+local TweenService = game:GetService("TweenService")
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
@@ -31,7 +31,10 @@ local ESP_Enabled = false
 local Aimbot_Enabled = false
 local Hitbox_Enabled = false
 local AutoFire_Enabled = false
-
+local Speed_Enabled = true
+local Jump_Enabled = true
+local Spin_Enabled = false
+local TweenTP_Enabled = false
 local Noclip_Enabled = false
 local InfJump_Enabled = false
 local Fly_Enabled = false
@@ -65,7 +68,7 @@ local Title = Instance.new("TextLabel")
 Title.Size = UDim2.new(1, -100, 1, 0)
 Title.Position = UDim2.new(0, 15, 0, 0)
 Title.BackgroundTransparency = 1
-Title.Text = "~ Dimitrof04 Hub (V2) ~ "
+Title.Text = "~ Dimitrof04 Hub (V2.1) ~ "
 Title.TextColor3 = Color3.fromRGB(255, 255, 255)
 Title.TextXAlignment = Enum.TextXAlignment.Left
 Title.Font = Enum.Font.GothamBold
@@ -129,6 +132,15 @@ local function AutoShoot()
 	end
 end
 
+local function ApplyStats(char)
+	if char and char:FindFirstChild("Humanoid") then
+		local hum = char.Humanoid
+		hum.WalkSpeed = WalkSpeed_Value
+		hum.JumpPower = JumpPower_Value
+		hum.UseJumpPower = true
+	end
+end
+
 local function CreateTabBtn(text, target)
 	local btn = Instance.new("TextButton")
 	btn.Size = UDim2.new(0, 120, 1, 0)
@@ -139,7 +151,7 @@ local function CreateTabBtn(text, target)
 	btn.TextSize = 13
 	btn.Parent = TabBar
 	Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
-	btn.MouseButton1Click:Connect(function() OpenTab(target) end)
+	btn.Activated:Connect(function() OpenTab(target) end)
 	return btn
 end
 
@@ -190,9 +202,12 @@ end
 -- --- CONTEÚDO: LOCALPLAYER ---
 local FlyBtn = CreateButton("Voo (Fly): OFF", LocalPlayerPage)
 local SpeedInput = CreateInput("Valor (16)", "Velocidade", LocalPlayerPage)
+local SpeedToggle = CreateButton("Speed: ON", LocalPlayerPage)
 local JumpInput = CreateInput("Valor (50)", "Pulo", LocalPlayerPage)
+local JumpToggle = CreateButton("Jump: ON", LocalPlayerPage)
 local NoclipBtn = CreateButton("Noclip: OFF", LocalPlayerPage)
 local InfJumpBtn = CreateButton("Pulo Infinito: OFF", LocalPlayerPage)
+local TweenBtn = CreateButton("Tween Player (Dis Tp inst): OFF", LocalPlayerPage) -- novo
 
 -- Seção de Teleporte
 local TPFrame = Instance.new("Frame")
@@ -249,7 +264,7 @@ local function UpdatePlayerList()
 			pBtn.TextSize = 12
 			Instance.new("UICorner", pBtn)
 
-			pBtn.MouseButton1Click:Connect(function()
+			pBtn.Activated:Connect(function()
 				TPInput.Text = p.Name
 			end)
 		end
@@ -264,9 +279,10 @@ UpdatePlayerList()
 local ESPBtn = CreateButton("ESP: OFF", FPSPage)
 local AimbotBtn = CreateButton("Aimbot: OFF", FPSPage)
 local HitboxBtn = CreateButton("Hitbox Gigante: OFF", FPSPage)
+local SpinCharBtn = CreateButton("Spin Character: OFF", FPSPage) -- novo
 --local AutoFireBtn = CreateButton("AutoFire: OFF", FPSPage)
 
-ESPBtn.MouseButton1Click:Connect(function()
+ESPBtn.Activated:Connect(function()
 	ESP_Enabled = not ESP_Enabled
 	ESPBtn.Text = "ESP: " .. (ESP_Enabled and "ON" or "OFF")
 end)	
@@ -295,7 +311,7 @@ JumpInput.FocusLost:Connect(function()
 	end
 end)
 
-HitboxBtn.MouseButton1Click:Connect(function()
+HitboxBtn.Activated:Connect(function()
 	Hitbox_Enabled = not Hitbox_Enabled
 	HitboxBtn.Text = "Hitbox Gigante: " .. (Hitbox_Enabled and "ON" or "OFF")
 end)
@@ -303,8 +319,19 @@ end)
 RunService.Heartbeat:Connect(function()
 	local char = LocalPlayer.Character
 	if char and char:FindFirstChild("Humanoid") then
-		char.Humanoid.WalkSpeed = WalkSpeed_Value
-		char.Humanoid.JumpPower = JumpPower_Value
+		
+		if Speed_Enabled then
+			char.Humanoid.WalkSpeed = WalkSpeed_Value
+		else
+			char.Humanoid.WalkSpeed = 16
+		end
+
+		if Jump_Enabled then
+			char.Humanoid.JumpPower = JumpPower_Value
+		else
+			char.Humanoid.JumpPower = 50
+		end
+		
 		char.Humanoid.UseJumpPower = true
 	end
 	if Hitbox_Enabled then
@@ -316,7 +343,7 @@ RunService.Heartbeat:Connect(function()
 				hrp.BrickColor = BrickColor.new("Really red")
 				hrp.Material = Enum.Material.Neon
 				hrp.CanCollide = false
-				
+
 				if Hitbox_Enabled then
 					hrp.Size = Vector3.new(10,10,10)
 					hrp.Transparency = 0.7
@@ -333,12 +360,26 @@ RunService.Heartbeat:Connect(function()
 end)
 
 -- Teleporte
-TPBtn.MouseButton1Click:Connect(function()
+TPBtn.Activated:Connect(function()
 	local targetName = TPInput.Text:lower()
 	for _, p in pairs(Players:GetPlayers()) do
 		if p ~= LocalPlayer and p.Name:lower():sub(1, #targetName) == targetName then
 			if p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
-				LocalPlayer.Character.HumanoidRootPart.CFrame = p.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, -3)
+				local targetCF = p.Character.HumanoidRootPart.CFrame * CFrame.new(0,0,-3)
+
+				if TweenTP_Enabled then
+					local hrp = LocalPlayer.Character.HumanoidRootPart
+
+					local tween = TweenService:Create(
+						hrp,
+						TweenInfo.new(0.5, Enum.EasingStyle.Linear),
+						{CFrame = targetCF}
+					)
+
+					tween:Play()
+				else
+					LocalPlayer.Character.HumanoidRootPart.CFrame = targetCF
+				end
 				break
 			end
 		end
@@ -346,7 +387,7 @@ TPBtn.MouseButton1Click:Connect(function()
 end)
 
 -- Noclip & InfJump (Mantidos da V5)
-NoclipBtn.MouseButton1Click:Connect(function()
+NoclipBtn.Activated:Connect(function()
 	Noclip_Enabled = not Noclip_Enabled
 	NoclipBtn.Text = "Noclip: " .. (Noclip_Enabled and "ON" or "OFF")
 	NoclipBtn.BackgroundColor3 = Noclip_Enabled and Color3.fromRGB(0, 120, 255) or Color3.fromRGB(35, 35, 35)
@@ -360,7 +401,7 @@ RunService.Stepped:Connect(function()
 	end
 end)
 
-InfJumpBtn.MouseButton1Click:Connect(function()
+InfJumpBtn.Activated:Connect(function()
 	InfJump_Enabled = not InfJump_Enabled
 	InfJumpBtn.Text = "Pulo Infinito: " .. (InfJump_Enabled and "ON" or "OFF")
 end)
@@ -374,7 +415,7 @@ end)
 -- --- LÓGICA FPS ---
 -- (ESP, Aimbot, Hitbox e AutoFire mantidos da lógica anterior para estabilidade)
 
-AimbotBtn.MouseButton1Click:Connect(function()
+AimbotBtn.Activated:Connect(function()
 	Aimbot_Enabled = not Aimbot_Enabled
 	AimbotBtn.Text = "Aimbot: " .. (Aimbot_Enabled and "ON" or "OFF")
 end)
@@ -396,7 +437,7 @@ local function GetClosestPlayer()
 	return closest
 end
 
---[[AutoFireBtn.MouseButton1Click:Connect(function()
+--[[AutoFireBtn.Activated:Connect(function()
 	AutoFire_Enabled = not AutoFire_Enabled
 	AutoFireBtn.Text = "AutoFire: " .. (AutoFire_Enabled and "ON" or "OFF")
 end)]]
@@ -409,6 +450,11 @@ RunService.RenderStepped:Connect(function()
 		if target and target.Character and target.Character:FindFirstChild("Head") then
 			Camera.CFrame = CFrame.new(Camera.CFrame.Position, target.Character.Head.Position)
 		end
+	end
+	
+	--Spin
+	if Spin_Enabled and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+		LocalPlayer.Character.HumanoidRootPart.CFrame *= CFrame.Angles(0, math.rad(10), 0)
 	end
 
 	-- ESP
@@ -427,12 +473,12 @@ RunService.RenderStepped:Connect(function()
 					txt.Text = p.Name
 					txt.TextColor3 = Color3.new(1,0,0)
 					txt.BackgroundTransparency = 1
-					
+
 					local bill2 = Instance.new("BillboardGui", p.Character.HumanoidRootPart)
 					bill2.Name = "ESP"
 					bill2.Size = UDim2.new(2,0,3,0)
 					bill2.AlwaysOnTop = true
-					
+
 					local Frame = Instance.new("Frame", bill2)
 					Frame.Size = UDim2.new(1,0,1,0)
 					Frame.BackgroundTransparency = 0.75
@@ -477,9 +523,9 @@ UserInputService.InputBegan:Connect(function(input, gpe)
 	if not gpe and input.KeyCode == Enum.KeyCode.J then ScreenGui.Enabled = not ScreenGui.Enabled end
 end)
 
-CloseBtn.MouseButton1Click:Connect(function() ScreenGui:Destroy() end)
+CloseBtn.Activated:Connect(function() ScreenGui:Destroy() end)
 
-FlyBtn.MouseButton1Click:Connect(function()
+FlyBtn.Activated:Connect(function()
 	Fly_Enabled = not Fly_Enabled
 	FlyBtn.Text = "Voo (Fly): " .. (Fly_Enabled and "ON" or "OFF")
 	FlyBtn.BackgroundColor3 = Fly_Enabled and Color3.fromRGB(0, 120, 255) or Color3.fromRGB(35, 35, 35)
@@ -523,5 +569,32 @@ FlyBtn.MouseButton1Click:Connect(function()
 	end
 end)
 
-print("Dimitrof04 Hub V2 Carregado - Use 'J' para ocultar")
+SpeedToggle.Activated:Connect(function()
+	Speed_Enabled = not Speed_Enabled
+	SpeedToggle.Text = "Speed: " .. (Speed_Enabled and "ON" or "OFF")
+end)
+
+JumpToggle.Activated:Connect(function()
+	Jump_Enabled = not Jump_Enabled
+	JumpToggle.Text = "Jump: " .. (Jump_Enabled and "ON" or "OFF")
+end)
+
+SpinCharBtn.Activated:Connect(function()
+	Spin_Enabled = not Spin_Enabled
+	SpinCharBtn.Text = "Spin Character: " .. (Spin_Enabled and "ON" or "OFF")
+end)
+
+TweenBtn.Activated:Connect(function()
+	TweenTP_Enabled = not TweenTP_Enabled
+	TweenBtn.Text = "Tween Player: " .. (TweenTP_Enabled and "ON" or "OFF")
+end)
+
+-- aplica quando spawnar
+LocalPlayer.CharacterAdded:Connect(function(char)
+	char:WaitForChild("Humanoid")
+	task.wait(0.2)
+	ApplyStats(char)
+end)
+
+print("Dimitrof04 Hub V2.1 Carregado - Use 'J' para ocultar")
 print("Fly : WASD move L-s abaixar Space Subir")
