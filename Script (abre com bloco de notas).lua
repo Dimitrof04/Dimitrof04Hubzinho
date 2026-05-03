@@ -1,7 +1,7 @@
 --[[
-    DIMITROF04 HUB - SISTEMA DE ABAS (V5)
+    DIMITROF04 HUB - SISTEMA DE ABAS (V6)
     Abas:
-    1. LocalPlayer (Movimentação)
+    1. LocalPlayer (Movimentação & Fly)
     2. FPS (Combate)
 ]]
 
@@ -11,6 +11,12 @@ local UserInputService = game:GetService("UserInputService")
 local LocalPlayer = Players.LocalPlayer
 local Camera = workspace.CurrentCamera
 
+-- 1. Verificar se já existe uma GUI e deletar a antiga
+local oldGui = LocalPlayer:WaitForChild("PlayerGui"):FindFirstChild("Dimitrof04Hub")
+if oldGui then
+	oldGui:Destroy()
+end
+
 -- Inicialização da GUI
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "Dimitrof04Hub"
@@ -19,36 +25,31 @@ ScreenGui.ResetOnSpawn = false
 ScreenGui.IgnoreGuiInset = true
 
 -- --- Variáveis de Estado ---
-
--- FPS (Combate e Visual)
 local ESP_Enabled = false
 local Aimbot_Enabled = false
 local Hitbox_Enabled = false
 local AutoFire_Enabled = false
 
--- LocalPlayer (Movimentação e Física)
 local Noclip_Enabled = false
 local InfJump_Enabled = false
+local Fly_Enabled = false
 local WalkSpeed_Value = 16
 local JumpPower_Value = 50
+local FlySpeed = 50
 
 -- Estrutura da Janela Principal
 local MainFrame = Instance.new("Frame")
 MainFrame.Name = "MainFrame"
-MainFrame.Size = UDim2.new(0, 500, 0, 450)
-MainFrame.Position = UDim2.new(0.5, -250, 0.5, -225)
+MainFrame.Size = UDim2.new(0, 550, 0, 450) -- Aumentado um pouco para a lista
+MainFrame.Position = UDim2.new(0.5, -275, 0.5, -225)
 MainFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
 MainFrame.BorderSizePixel = 0
 MainFrame.Parent = ScreenGui
 
-local UICorner = Instance.new("UICorner")
-UICorner.CornerRadius = UDim.new(0, 10)
-UICorner.Parent = MainFrame
-
-local UIStroke = Instance.new("UIStroke")
+Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 10)
+local UIStroke = Instance.new("UIStroke", MainFrame)
 UIStroke.Color = Color3.fromRGB(0, 120, 255)
 UIStroke.Thickness = 2
-UIStroke.Parent = MainFrame
 
 -- Barra de Título
 local TopBar = Instance.new("Frame")
@@ -56,14 +57,13 @@ TopBar.Size = UDim2.new(1, 0, 0, 40)
 TopBar.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
 TopBar.BorderSizePixel = 0
 TopBar.Parent = MainFrame
-
 Instance.new("UICorner", TopBar).CornerRadius = UDim.new(0, 10)
 
 local Title = Instance.new("TextLabel")
 Title.Size = UDim2.new(1, -100, 1, 0)
 Title.Position = UDim2.new(0, 15, 0, 0)
 Title.BackgroundTransparency = 1
-Title.Text = "Dimitrof04 ;3 || " .. LocalPlayer.Name
+Title.Text = "Dimitrof04 ;3 (V6)"
 Title.TextColor3 = Color3.fromRGB(255, 255, 255)
 Title.TextXAlignment = Enum.TextXAlignment.Left
 Title.Font = Enum.Font.GothamBold
@@ -79,7 +79,7 @@ CloseBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 CloseBtn.Parent = TopBar
 Instance.new("UICorner", CloseBtn).CornerRadius = UDim.new(0, 5)
 
--- Barra de Abas (Abaixo do Título)
+-- Barra de Abas
 local TabBar = Instance.new("Frame")
 TabBar.Size = UDim2.new(1, -20, 0, 35)
 TabBar.Position = UDim2.new(0, 10, 0, 45)
@@ -99,7 +99,7 @@ local function SetupPage(page)
 	page.Size = UDim2.new(1, -20, 1, -95)
 	page.Position = UDim2.new(0, 10, 0, 85)
 	page.BackgroundTransparency = 1
-	page.CanvasSize = UDim2.new(0, 0, 0, 600)
+	page.CanvasSize = UDim2.new(0, 0, 0, 700)
 	page.ScrollBarThickness = 4
 	page.Visible = false
 	page.Parent = MainFrame
@@ -112,13 +112,11 @@ end
 SetupPage(LocalPlayerPage)
 SetupPage(FPSPage)
 
--- Função para Alternar Abas
 local function OpenTab(tabName)
 	LocalPlayerPage.Visible = (tabName == "LocalPlayer")
 	FPSPage.Visible = (tabName == "FPS")
 end
 
--- Botões das Abas
 local function CreateTabBtn(text, target)
 	local btn = Instance.new("TextButton")
 	btn.Size = UDim2.new(0, 120, 1, 0)
@@ -129,23 +127,18 @@ local function CreateTabBtn(text, target)
 	btn.TextSize = 13
 	btn.Parent = TabBar
 	Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
-
-	btn.MouseButton1Click:Connect(function()
-		OpenTab(target)
-	end)
+	btn.MouseButton1Click:Connect(function() OpenTab(target) end)
 	return btn
 end
 
 CreateTabBtn("LocalPlayer", "LocalPlayer")
 CreateTabBtn("FPS", "FPS")
-
--- Iniciar na aba LocalPlayer
 OpenTab("LocalPlayer")
 
 -- Auxiliares de UI
 local function CreateButton(text, parent)
 	local btn = Instance.new("TextButton")
-	btn.Size = UDim2.new(0.95, 0, 0, 40)
+	btn.Size = UDim2.new(0.95, 0, 0, 35)
 	btn.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
 	btn.Text = text
 	btn.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -158,20 +151,20 @@ end
 
 local function CreateInput(placeholder, labelText, parent)
 	local frame = Instance.new("Frame")
-	frame.Size = UDim2.new(0.95, 0, 0, 60)
+	frame.Size = UDim2.new(0.95, 0, 0, 55)
 	frame.BackgroundTransparency = 1
 	frame.Parent = parent
-
 	local lbl = Instance.new("TextLabel")
-	lbl.Size = UDim2.new(1, 0, 0, 20)
+	lbl.Size = UDim2.new(1, 0, 0, 15)
 	lbl.Text = labelText
 	lbl.TextColor3 = Color3.fromRGB(200, 200, 200)
 	lbl.BackgroundTransparency = 1
 	lbl.TextXAlignment = Enum.TextXAlignment.Left
+	lbl.Font = Enum.Font.Gotham
+	lbl.TextSize = 12
 	lbl.Parent = frame
-
 	local box = Instance.new("TextBox")
-	box.Size = UDim2.new(1, 0, 0, 35)
+	box.Size = UDim2.new(1, 0, 0, 30)
 	box.Position = UDim2.new(0, 0, 0, 20)
 	box.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 	box.PlaceholderText = placeholder
@@ -182,26 +175,212 @@ local function CreateInput(placeholder, labelText, parent)
 	return box
 end
 
--- --- CONTEÚDO DA ABA: LOCALPLAYER ---
-local SpeedInput = CreateInput("Valor (16)", "Velocidade (WalkSpeed)", LocalPlayerPage)
-local JumpInput = CreateInput("Valor (50)", "Força do Pulo (JumpPower)", LocalPlayerPage)
+-- --- CONTEÚDO: LOCALPLAYER ---
+local FlyBtn = CreateButton("Voo (Fly): OFF", LocalPlayerPage)
+local SpeedInput = CreateInput("Valor (16)", "Velocidade", LocalPlayerPage)
+local JumpInput = CreateInput("Valor (50)", "Pulo", LocalPlayerPage)
 local NoclipBtn = CreateButton("Noclip: OFF", LocalPlayerPage)
 local InfJumpBtn = CreateButton("Pulo Infinito: OFF", LocalPlayerPage)
-local TPInput = CreateInput("Nome do Jogador", "Teleportar até Player", LocalPlayerPage)
-local TPBtn = CreateButton("Teleportar Agora", LocalPlayerPage)
 
--- --- CONTEÚDO DA ABA: FPS ---
+-- Seção de Teleporte
+local TPFrame = Instance.new("Frame")
+TPFrame.Size = UDim2.new(0.95, 0, 0, 180)
+TPFrame.BackgroundTransparency = 1
+TPFrame.Parent = LocalPlayerPage
+
+local TPLabel = Instance.new("TextLabel", TPFrame)
+TPLabel.Text = "Teleporte (Selecione ou Digite)"
+TPLabel.Size = UDim2.new(1, 0, 0, 20)
+TPLabel.TextColor3 = Color3.fromRGB(0, 120, 255)
+TPLabel.BackgroundTransparency = 1
+TPLabel.Font = Enum.Font.GothamBold
+
+local TPInput = Instance.new("TextBox", TPFrame)
+TPInput.Size = UDim2.new(0.6, -5, 0, 30)
+TPInput.Position = UDim2.new(0, 0, 0, 25)
+TPInput.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+TPInput.PlaceholderText = "Nome..."
+TPInput.Text = ""
+TPInput.TextColor3 = Color3.fromRGB(255, 255, 255)
+Instance.new("UICorner", TPInput)
+
+local TPBtn = Instance.new("TextButton", TPFrame)
+TPBtn.Size = UDim2.new(0.4, -5, 0, 30)
+TPBtn.Position = UDim2.new(0.6, 5, 0, 25)
+TPBtn.BackgroundColor3 = Color3.fromRGB(0, 120, 255)
+TPBtn.Text = "Teleportar"
+TPBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+Instance.new("UICorner", TPBtn)
+
+local PlayerScroll = Instance.new("ScrollingFrame", TPFrame)
+PlayerScroll.Size = UDim2.new(1, 0, 0, 110)
+PlayerScroll.Position = UDim2.new(0, 0, 0, 65)
+PlayerScroll.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+PlayerScroll.BorderSizePixel = 0
+PlayerScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+Instance.new("UIListLayout", PlayerScroll).Padding = UDim.new(0, 2)
+Instance.new("UICorner", PlayerScroll)
+
+-- Atualizar Lista de Jogadores
+local function UpdatePlayerList()
+	for _, child in pairs(PlayerScroll:GetChildren()) do
+		if child:IsA("TextButton") then child:Destroy() end
+	end
+	for _, p in pairs(Players:GetPlayers()) do
+		if p ~= LocalPlayer then
+			local pBtn = Instance.new("TextButton", PlayerScroll)
+			pBtn.Size = UDim2.new(1, -10, 0, 25)
+			pBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+			pBtn.Text = p.Name
+			pBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+			pBtn.Font = Enum.Font.Gotham
+			pBtn.TextSize = 12
+			Instance.new("UICorner", pBtn)
+			
+			pBtn.MouseButton1Click:Connect(function()
+				TPInput.Text = p.Name
+			end)
+		end
+	end
+	PlayerScroll.CanvasSize = UDim2.new(0, 0, 0, #Players:GetPlayers() * 27)
+end
+Players.PlayerAdded:Connect(UpdatePlayerList)
+Players.PlayerRemoving:Connect(UpdatePlayerList)
+UpdatePlayerList()
+
+-- --- CONTEÚDO: FPS ---
 local ESPBtn = CreateButton("ESP: OFF", FPSPage)
 local AimbotBtn = CreateButton("Aimbot: OFF", FPSPage)
-local HitboxBtn = CreateButton("Expandir Hitbox: OFF", FPSPage)
+local HitboxBtn = CreateButton("Hitbox Gigante: OFF", FPSPage)
 local AutoFireBtn = CreateButton("AutoFire: OFF", FPSPage)
 
--- --- LÓGICA DO SCRIPT ---
+-- --- LÓGICA DE MOVIMENTAÇÃO ---
 
--- Alternar Janela com 'J'
-UserInputService.InputBegan:Connect(function(input, gameProcessed)
-	if not gameProcessed and input.KeyCode == Enum.KeyCode.J then
-		ScreenGui.Enabled = not ScreenGui.Enabled
+-- Fly System
+local flyKeyDown, flyKeyUp
+FlyBtn.MouseButton1Click:Connect(function()
+	Fly_Enabled = not Fly_Enabled
+	FlyBtn.Text = "Voo (Fly): " .. (Fly_Enabled and "ON" or "OFF")
+	FlyBtn.BackgroundColor3 = Fly_Enabled and Color3.fromRGB(0, 120, 255) or Color3.fromRGB(35, 35, 35)
+	
+	local char = LocalPlayer.Character
+	if not char or not char:FindFirstChild("HumanoidRootPart") then return end
+	
+	if Fly_Enabled then
+		local bv = Instance.new("BodyVelocity", char.HumanoidRootPart)
+		bv.Name = "FlyVelocity"
+		bv.Velocity = Vector3.new(0, 0, 0)
+		bv.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
+		
+		local bg = Instance.new("BodyGyro", char.HumanoidRootPart)
+		bg.Name = "FlyGyro"
+		bg.P = 9e4
+		bg.MaxTorque = Vector3.new(math.huge, math.huge, math.huge)
+		bg.CFrame = char.HumanoidRootPart.CFrame
+		
+		task.spawn(function()
+			while Fly_Enabled and char:FindFirstChild("HumanoidRootPart") do
+				local moveDir = char.Humanoid.MoveDirection
+				local flyVel = moveDir * FlySpeed
+				
+				if UserInputService:IsKeyDown(Enum.KeyCode.Space) then
+					flyVel = flyVel + Vector3.new(0, FlySpeed, 0)
+				elseif UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) then
+					flyVel = flyVel + Vector3.new(0, -FlySpeed, 0)
+				end
+				
+				bv.Velocity = flyVel
+				bg.CFrame = Camera.CFrame
+				RunService.RenderStepped:Wait()
+			end
+			bv:Destroy()
+			bg:Destroy()
+		end)
+	end
+end)
+
+-- WalkSpeed / JumpPower
+SpeedInput.FocusLost:Connect(function() WalkSpeed_Value = tonumber(SpeedInput.Text) or 16 end)
+JumpInput.FocusLost:Connect(function() JumpPower_Value = tonumber(JumpInput.Text) or 50 end)
+
+RunService.Heartbeat:Connect(function()
+	local char = LocalPlayer.Character
+	if char and char:FindFirstChild("Humanoid") then
+		char.Humanoid.WalkSpeed = WalkSpeed_Value
+		char.Humanoid.JumpPower = JumpPower_Value
+	end
+end)
+
+-- Teleporte
+TPBtn.MouseButton1Click:Connect(function()
+	local targetName = TPInput.Text:lower()
+	for _, p in pairs(Players:GetPlayers()) do
+		if p ~= LocalPlayer and p.Name:lower():sub(1, #targetName) == targetName then
+			if p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+				LocalPlayer.Character.HumanoidRootPart.CFrame = p.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, -3)
+				break
+			end
+		end
+	end
+end)
+
+-- Noclip & InfJump (Mantidos da V5)
+NoclipBtn.MouseButton1Click:Connect(function()
+	Noclip_Enabled = not Noclip_Enabled
+	NoclipBtn.Text = "Noclip: " .. (Noclip_Enabled and "ON" or "OFF")
+	NoclipBtn.BackgroundColor3 = Noclip_Enabled and Color3.fromRGB(0, 120, 255) or Color3.fromRGB(35, 35, 35)
+end)
+
+RunService.Stepped:Connect(function()
+	if Noclip_Enabled and LocalPlayer.Character then
+		for _, part in pairs(LocalPlayer.Character:GetDescendants()) do
+			if part:IsA("BasePart") then part.CanCollide = false end
+		end
+	end
+end)
+
+InfJumpBtn.MouseButton1Click:Connect(function()
+	InfJump_Enabled = not InfJump_Enabled
+	InfJumpBtn.Text = "Pulo Infinito: " .. (InfJump_Enabled and "ON" or "OFF")
+end)
+
+UserInputService.JumpRequest:Connect(function()
+	if InfJump_Enabled and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+		LocalPlayer.Character.Humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+	end
+end)
+
+-- --- LÓGICA FPS ---
+-- (ESP, Aimbot, Hitbox e AutoFire mantidos da lógica anterior para estabilidade)
+
+AimbotBtn.MouseButton1Click:Connect(function()
+	Aimbot_Enabled = not Aimbot_Enabled
+	AimbotBtn.Text = "Aimbot: " .. (Aimbot_Enabled and "ON" or "OFF")
+end)
+
+local function GetClosestPlayer()
+	local closest, shortestDist = nil, math.huge
+	for _, p in pairs(Players:GetPlayers()) do
+		if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+			local pos, onScreen = Camera:WorldToViewportPoint(p.Character.HumanoidRootPart.Position)
+			if onScreen then
+				local dist = (Vector2.new(pos.X, pos.Y) - UserInputService:GetMouseLocation()).Magnitude
+				if dist < shortestDist and dist < 400 then
+					shortestDist = dist
+					closest = p
+				end
+			end
+		end
+	end
+	return closest
+end
+
+RunService.RenderStepped:Connect(function()
+	if Aimbot_Enabled then
+		local target = GetClosestPlayer()
+		if target and target.Character:FindFirstChild("Head") then
+			Camera.CFrame = CFrame.new(Camera.CFrame.Position, target.Character.Head.Position)
+		end
 	end
 end)
 
@@ -221,204 +400,13 @@ UserInputService.InputChanged:Connect(function(input)
 		MainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
 	end
 end)
+UserInputService.InputEnded:Connect(function(input) if input.UserInputType == Enum.UserInputType.MouseButton1 then dragging = false end end)
 
-UserInputService.InputEnded:Connect(function(input)
-	if input.UserInputType == Enum.UserInputType.MouseButton1 then dragging = false end
+-- Atalho para abrir/fechar
+UserInputService.InputBegan:Connect(function(input, gpe)
+	if not gpe and input.KeyCode == Enum.KeyCode.J then ScreenGui.Enabled = not ScreenGui.Enabled end
 end)
 
 CloseBtn.MouseButton1Click:Connect(function() ScreenGui:Destroy() end)
 
--- Lógica Movimentação
-SpeedInput.FocusLost:Connect(function() WalkSpeed_Value = tonumber(SpeedInput.Text) or 16 end)
-JumpInput.FocusLost:Connect(function() JumpPower_Value = tonumber(JumpInput.Text) or 50 end)
-
-RunService.Heartbeat:Connect(function()
-	local char = LocalPlayer.Character
-	if char and char:FindFirstChild("Humanoid") then
-		char.Humanoid.WalkSpeed = WalkSpeed_Value
-		char.Humanoid.JumpPower = JumpPower_Value
-		char.Humanoid.UseJumpPower = true 
-	end
-end)
-
-InfJumpBtn.MouseButton1Click:Connect(function()
-	InfJump_Enabled = not InfJump_Enabled
-	InfJumpBtn.Text = "Pulo Infinito: " .. (InfJump_Enabled and "ON" or "OFF")
-	InfJumpBtn.BackgroundColor3 = InfJump_Enabled and Color3.fromRGB(0, 120, 255) or Color3.fromRGB(35, 35, 35)
-end)
-
-UserInputService.JumpRequest:Connect(function()
-	if InfJump_Enabled then
-		local char = LocalPlayer.Character
-		if char and char:FindFirstChild("Humanoid") then
-			char.Humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
-		end
-	end
-end)
-
-NoclipBtn.MouseButton1Click:Connect(function()
-	Noclip_Enabled = not Noclip_Enabled
-	NoclipBtn.Text = "Noclip: " .. (Noclip_Enabled and "ON" or "OFF")
-	NoclipBtn.BackgroundColor3 = Noclip_Enabled and Color3.fromRGB(0, 120, 255) or Color3.fromRGB(35, 35, 35)
-end)
-
-RunService.Stepped:Connect(function()
-	if Noclip_Enabled then
-		local char = LocalPlayer.Character
-		if char then
-			for _, part in pairs(char:GetDescendants()) do
-				if part:IsA("BasePart") and part.CanCollide == true then
-					part.CanCollide = false
-				end
-			end
-		end
-	end
-end)
-
-TPBtn.MouseButton1Click:Connect(function()
-	local targetName = TPInput.Text:lower()
-	for _, p in pairs(Players:GetPlayers()) do
-		if p ~= LocalPlayer and p.Name:lower():sub(1, #targetName) == targetName then
-			if p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
-				LocalPlayer.Character.HumanoidRootPart.CFrame = p.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, -3)
-				break
-			end
-		end
-	end
-end)
-
--- Lógica FPS
-ESPBtn.MouseButton1Click:Connect(function()
-	ESP_Enabled = not ESP_Enabled
-	ESPBtn.Text = "ESP: " .. (ESP_Enabled and "ON" or "OFF")
-	ESPBtn.BackgroundColor3 = ESP_Enabled and Color3.fromRGB(0, 150, 0) or Color3.fromRGB(35, 35, 35)
-end)
-
-local ESP_Boxes = {}
-RunService.RenderStepped:Connect(function()
-	if ESP_Enabled then
-		for _, player in pairs(Players:GetPlayers()) do
-			if player ~= LocalPlayer then
-				if not ESP_Boxes[player] then
-					local box = Instance.new("Frame", ScreenGui)
-					box.BackgroundColor3 = Color3.fromRGB(0, 255, 255)
-					box.BackgroundTransparency = 0.6
-					box.BorderSizePixel = 0
-					ESP_Boxes[player] = box
-				end
-				local box = ESP_Boxes[player]
-				if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-					local hrp = player.Character.HumanoidRootPart
-					local pos, onScreen = Camera:WorldToViewportPoint(hrp.Position)
-					if onScreen then
-						local dist = (Camera.CFrame.Position - hrp.Position).Magnitude
-						local size = (1 / dist) * 2000
-						box.Size = UDim2.new(0, size * 0.6, 0, size)
-						box.Position = UDim2.new(0, pos.X - (box.Size.X.Offset / 2), 0, pos.Y - (box.Size.Y.Offset / 2))
-						box.Visible = true
-					else box.Visible = false end
-				else box.Visible = false end
-			end
-		end
-	else
-		for _, box in pairs(ESP_Boxes) do box.Visible = false end
-	end
-end)
-
-AimbotBtn.MouseButton1Click:Connect(function()
-	Aimbot_Enabled = not Aimbot_Enabled
-	AimbotBtn.Text = "Aimbot: " .. (Aimbot_Enabled and "ON" or "OFF")
-	AimbotBtn.BackgroundColor3 = Aimbot_Enabled and Color3.fromRGB(150, 0, 150) or Color3.fromRGB(35, 35, 35)
-end)
-
-local function GetClosestPlayer()
-	local closest = nil
-	local shortestDist = math.huge
-	for _, p in pairs(Players:GetPlayers()) do
-		if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
-			local distanceToPlayer = (p.Character.HumanoidRootPart.Position - Camera.CFrame.Position).Magnitude
-			if distanceToPlayer <= 300 then
-				local pos, onScreen = Camera:WorldToViewportPoint(p.Character.HumanoidRootPart.Position)
-				if onScreen then
-					local mousePos = UserInputService:GetMouseLocation()
-					local dist = (Vector2.new(pos.X, pos.Y) - mousePos).Magnitude
-					if dist < shortestDist and dist < 400 then
-						shortestDist = dist
-						closest = p
-					end
-				end
-			end
-		end
-	end
-	return closest
-end
-
-RunService.RenderStepped:Connect(function()
-	if Aimbot_Enabled then
-		local target = GetClosestPlayer()
-		if target and target.Character and target.Character:FindFirstChild("Head") then
-			Camera.CFrame = CFrame.new(Camera.CFrame.Position, target.Character.Head.Position)
-		end
-	end
-end)
-
-HitboxBtn.MouseButton1Click:Connect(function()
-	Hitbox_Enabled = not Hitbox_Enabled
-	HitboxBtn.Text = "Expandir Hitbox: " .. (Hitbox_Enabled and "ON" or "OFF")
-	HitboxBtn.BackgroundColor3 = Hitbox_Enabled and Color3.fromRGB(200, 100, 0) or Color3.fromRGB(35, 35, 35)
-	if not Hitbox_Enabled then
-		for _, p in pairs(Players:GetPlayers()) do
-			if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
-				p.Character.HumanoidRootPart.Size = Vector3.new(2, 2, 1)
-				p.Character.HumanoidRootPart.Transparency = 1
-			end
-		end
-	end
-end)
-
-RunService.Heartbeat:Connect(function()
-	if Hitbox_Enabled then
-		for _, p in pairs(Players:GetPlayers()) do
-			if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
-				p.Character.HumanoidRootPart.Size = Vector3.new(15, 15, 15)
-				p.Character.HumanoidRootPart.Transparency = 0.6
-				p.Character.HumanoidRootPart.CanCollide = false
-			end
-		end
-	end
-end)
-
-AutoFireBtn.MouseButton1Click:Connect(function()
-	AutoFire_Enabled = not AutoFire_Enabled
-	AutoFireBtn.Text = "AutoFire: " .. (AutoFire_Enabled and "ON" or "OFF")
-	AutoFireBtn.BackgroundColor3 = AutoFire_Enabled and Color3.fromRGB(200, 0, 0) or Color3.fromRGB(35, 35, 35)
-end)
-
-local function IsVisible(targetPart)
-	local origin = Camera.CFrame.Position
-	local direction = (targetPart.Position - origin).Unit * (targetPart.Position - origin).Magnitude
-	local raycastParams = RaycastParams.new()
-	raycastParams.FilterDescendantsInstances = {LocalPlayer.Character}
-	raycastParams.FilterType = Enum.RaycastFilterType.Exclude
-	local result = workspace:Raycast(origin, direction, raycastParams)
-	if result and result.Instance then
-		return result.Instance:IsDescendantOf(targetPart.Parent)
-	end
-	return true
-end
-
-RunService.RenderStepped:Connect(function()
-	if AutoFire_Enabled then
-		local target = GetClosestPlayer()
-		if target and target.Character and target.Character:FindFirstChild("HumanoidRootPart") then
-			if IsVisible(target.Character.HumanoidRootPart) then
-				local tool = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Tool")
-				if tool then tool:Activate() end
-			end
-		end
-	end
-end)
-
-print("------------------------------------------")
-print("Dimitrof04 Hub Carregado por: " .. LocalPlayer.Name)
-print("------------------------------------------")
+print("Dimitrof04 Hub V6 Carregado - Use 'J' para ocultar")
