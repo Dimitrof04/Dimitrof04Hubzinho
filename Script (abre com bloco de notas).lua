@@ -44,6 +44,7 @@ local SpinSpeed_Value = 75
 local FlySpeed = 50
 local AimSmoothness = 0.2
 local FOV = 200
+local Minimized = false
 
 -- Estrutura da Janela Principal
 local MainFrame = Instance.new("Frame")
@@ -53,8 +54,10 @@ MainFrame.Position = UDim2.new(0.5, -275, 0.5, -225)
 MainFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
 MainFrame.BorderSizePixel = 0
 MainFrame.Parent = ScreenGui
-
 Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 10)
+
+local OriginalSize = MainFrame.Size
+
 local UIStroke = Instance.new("UIStroke", MainFrame)
 UIStroke.Color = Color3.fromRGB(0, 120, 255)
 UIStroke.Thickness = 2
@@ -82,10 +85,25 @@ local CloseBtn = Instance.new("TextButton")
 CloseBtn.Size = UDim2.new(0, 35, 0, 35)
 CloseBtn.Position = UDim2.new(1, -40, 0, 2.5)
 CloseBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+CloseBtn.BackgroundTransparency = 1
 CloseBtn.Text = "X"
-CloseBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+CloseBtn.TextColor3 = Color3.fromRGB(0, 38, 255)
 CloseBtn.Parent = TopBar
+CloseBtn.Font = Enum.Font.Kalam
+CloseBtn.TextScaled = true
 Instance.new("UICorner", CloseBtn).CornerRadius = UDim.new(0, 5)
+
+local MinBtn = Instance.new("TextButton")
+MinBtn.Size = UDim2.new(0, 35, 0, 35)
+MinBtn.Position = UDim2.new(1, -80, 0, 2.5) -- fica do lado do X
+MinBtn.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
+MinBtn.BackgroundTransparency = 1
+MinBtn.Text = "-"
+MinBtn.TextScaled = true
+MinBtn.Font = Enum.Font.Kalam
+MinBtn.TextColor3 = Color3.fromRGB(0, 38, 255)
+MinBtn.Parent = TopBar
+Instance.new("UICorner", MinBtn).CornerRadius = UDim.new(0, 5)
 
 -- Barra de Abas
 local TabBar = Instance.new("Frame")
@@ -123,6 +141,10 @@ SetupPage(FPSPage)
 local function OpenTab(tabName)
 	LocalPlayerPage.Visible = (tabName == "LocalPlayer")
 	FPSPage.Visible = (tabName == "FPS")
+end
+
+local function MinizeWindows()
+	ScreenGui.Enabled = not ScreenGui.Enabled
 end
 
 local function AutoShoot()
@@ -167,13 +189,35 @@ local function CreateButton(text, parent)
 	local btn = Instance.new("TextButton")
 	btn.Size = UDim2.new(0.95, 0, 0, 35)
 	btn.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
-	btn.Text = text
+	btn.Text = text .. ": OFF"
 	btn.TextColor3 = Color3.fromRGB(255, 255, 255)
 	btn.Font = Enum.Font.GothamMedium
 	btn.TextSize = 14
 	btn.Parent = parent
+
 	Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
-	return btn
+
+	local stroke = Instance.new("UIStroke")
+	stroke.Color = Color3.fromRGB(0, 0, 0)
+	stroke.Thickness = 2
+	stroke.Parent = btn
+
+	-- estado interno
+	local enabled = false
+
+	-- função de toggle embutida
+	local function Toggle()
+		enabled = not enabled
+
+		btn.Text = text .. ": " .. (enabled and "ON" or "OFF")
+		stroke.Color = enabled and Color3.fromRGB(0,120,255) or Color3.fromRGB(0,0,0)
+	end
+
+	btn.Activated:Connect(Toggle)
+
+	return btn, function()
+		return enabled
+	end
 end
 
 local function CreateInput(placeholder, labelText, parent)
@@ -271,12 +315,12 @@ CreateSlider("Fly Speed", 10, 750, 50, LocalPlayerPage, function(val)
 end)
 
 -- --- CONTEÚDO: LOCALPLAYER ---
-local FlyBtn = CreateButton("Voo (Fly): OFF", LocalPlayerPage)
-local SpeedToggle = CreateButton("Speed: ON", LocalPlayerPage)
-local JumpToggle = CreateButton("Jump: ON", LocalPlayerPage)
-local NoclipBtn = CreateButton("Noclip: OFF", LocalPlayerPage)
-local InfJumpBtn = CreateButton("Pulo Infinito: OFF", LocalPlayerPage)
-local TweenBtn = CreateButton("Tween Player (Dis Tp inst): OFF", LocalPlayerPage) -- novo
+local FlyBtn = CreateButton("Voo (Fly) ", LocalPlayerPage)
+local SpeedToggle = CreateButton("Speed ", LocalPlayerPage)
+local JumpToggle = CreateButton("Jump ", LocalPlayerPage)
+local NoclipBtn = CreateButton("Noclip ", LocalPlayerPage)
+local InfJumpBtn = CreateButton("inf Jump ", LocalPlayerPage)
+local TweenBtn = CreateButton("Tween Player (Dis Tp inst) ", LocalPlayerPage) -- novo
 
 -- Seção de Teleporte
 local TPFrame = Instance.new("Frame")
@@ -314,43 +358,94 @@ PlayerScroll.Position = UDim2.new(0, 0, 0, 65)
 PlayerScroll.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
 PlayerScroll.BorderSizePixel = 0
 PlayerScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
-Instance.new("UIListLayout", PlayerScroll).Padding = UDim.new(0, 2)
+
+local UIListLayoutGenericoTpPlayer = Instance.new("UIListLayout", PlayerScroll)
+UIListLayoutGenericoTpPlayer.FillDirection = Enum.FillDirection.Vertical
+UIListLayoutGenericoTpPlayer.VerticalAlignment = Enum.VerticalAlignment.Top
+UIListLayoutGenericoTpPlayer.SortOrder = Enum.SortOrder.Name
+UIListLayoutGenericoTpPlayer.HorizontalAlignment = Enum.HorizontalAlignment.Center
+UIListLayoutGenericoTpPlayer.Name = "UIListLayout"
+
 Instance.new("UICorner", PlayerScroll)
 
 -- Atualizar Lista de Jogadores
 local function UpdatePlayerList()
 	for _, child in pairs(PlayerScroll:GetChildren()) do
-		if child:IsA("TextButton") then child:Destroy() end
+		if child:IsA("TextButton") then
+			child:Destroy()
+		end
 	end
-	
-	for _, p in pairs(Players:GetPlayers()) do
-		if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
-			local hrp = p.Character.HumanoidRootPart
 
-			if Hitbox_Enabled then
-				hrp.Size = Vector3.new(10,10,10)
-				hrp.Transparency = 0.7
-				hrp.Material = Enum.Material.Neon
-				hrp.CanCollide = false
-			else
-				hrp.Size = Vector3.new(2,2,1)
-				hrp.Transparency = 0
-				hrp.Material = Enum.Material.Plastic
+	for _, player in pairs(Players:GetPlayers()) do
+		if player ~= LocalPlayer then
+
+			-- ✅ CRIAR BOTÃO
+			local btn = Instance.new("TextButton")
+			btn.Size = UDim2.new(0.938, 0, 0.23, 0)
+			btn.Text = player.DisplayName .. " (@" .. player.Name .. ")"
+			btn.Parent = PlayerScroll
+			btn.BackgroundTransparency = 1
+			btn.TextColor3 = Color3.fromRGB(0, 187, 255)
+
+			-- ✅ CLICK → COLOCAR NO INPUT
+			btn.Activated:Connect(function()
+				TPInput.Text = player.Name
+			end)
+			
+			
+			-- ✅ HITBOX
+			if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+				local hrp = player.Character.HumanoidRootPart
+
+				if Hitbox_Enabled then
+					hrp.Size = Vector3.new(10,10,10)
+					hrp.Transparency = 0.7
+					hrp.Material = Enum.Material.Neon
+					hrp.CanCollide = false
+				else
+					hrp.Size = Vector3.new(2,2,1)
+					hrp.Transparency = 0
+					hrp.Material = Enum.Material.Plastic
+				end
 			end
 		end
 	end
 	
+	local count = 0
+	for _, p in pairs(Players:GetPlayers()) do
+		if p ~= LocalPlayer then
+			count += 1
+		end
+	end
+
 	PlayerScroll.CanvasSize = UDim2.new(0, 0, 0, #Players:GetPlayers() * 27)
 end
-Players.PlayerAdded:Connect(UpdatePlayerList)
+
+local function HookPlayer(player)
+	player.CharacterAdded:Connect(function()
+		task.wait(0.2)
+		UpdatePlayerList()
+	end)
+end
+
+for _, p in pairs(Players:GetPlayers()) do
+	HookPlayer(p)
+end
+
+Players.PlayerAdded:Connect(function(player)
+	HookPlayer(player)
+	UpdatePlayerList()
+end)
+
 Players.PlayerRemoving:Connect(UpdatePlayerList)
+
 UpdatePlayerList()
 
 -- --- CONTEÚDO: FPS ---
-local ESPBtn = CreateButton("ESP: OFF", FPSPage)
-local AimbotBtn = CreateButton("Aimbot: OFF", FPSPage)
-local HitboxBtn = CreateButton("Hitbox Gigante: OFF", FPSPage)
-local SpinCharBtn = CreateButton("Spin Character: OFF", FPSPage)
+local SpinCharBtn = CreateButton("Spin Character ", FPSPage)
+local ESPBtn = CreateButton("ESP ", FPSPage)
+local AimbotBtn = CreateButton("Aimbot ", FPSPage)
+local HitboxBtn = CreateButton("Hitbox Gigante ", FPSPage)
 
 CreateSlider("SpinSpeed", 10, 300, 75, FPSPage, function(val)
 	SpinSpeed_Value = val
@@ -368,27 +463,6 @@ end)
 -- Fly System
 local flyKeyDown, flyKeyUp
 
---[[
--- WalkSpeed / JumpPower
-SpeedInput.FocusLost:Connect(function()
-	WalkSpeed_Value = tonumber(SpeedInput.Text) or 16
-
-	local char = LocalPlayer.Character
-	if char and char:FindFirstChild("Humanoid") then
-		char.Humanoid.WalkSpeed = WalkSpeed_Value
-	end
-end)
-
-JumpInput.FocusLost:Connect(function()
-	JumpPower_Value = tonumber(JumpInput.Text) or 50
-
-	local char = LocalPlayer.Character
-	if char and char:FindFirstChild("Humanoid") then
-		char.Humanoid.JumpPower = JumpPower_Value
-	end
-end)
-
-]]
 HitboxBtn.Activated:Connect(function()
 	Hitbox_Enabled = not Hitbox_Enabled
 	HitboxBtn.Text = "Hitbox Gigante: " .. (Hitbox_Enabled and "ON" or "OFF")
@@ -464,24 +538,12 @@ TPBtn.Activated:Connect(function()
 	end
 end)
 
--- Noclip & InfJump (Mantidos da V5)
-NoclipBtn.Activated:Connect(function()
-	Noclip_Enabled = not Noclip_Enabled
-	NoclipBtn.Text = "Noclip: " .. (Noclip_Enabled and "ON" or "OFF")
-	NoclipBtn.BackgroundColor3 = Noclip_Enabled and Color3.fromRGB(0, 120, 255) or Color3.fromRGB(35, 35, 35)
-end)
-
 RunService.Stepped:Connect(function()
 	if Noclip_Enabled and LocalPlayer.Character then
 		for _, part in pairs(LocalPlayer.Character:GetDescendants()) do
 			if part:IsA("BasePart") then part.CanCollide = false end
 		end
 	end
-end)
-
-InfJumpBtn.Activated:Connect(function()
-	InfJump_Enabled = not InfJump_Enabled
-	InfJumpBtn.Text = "Pulo Infinito: " .. (InfJump_Enabled and "ON" or "OFF")
 end)
 
 UserInputService.JumpRequest:Connect(function()
@@ -608,15 +670,21 @@ UserInputService.InputEnded:Connect(function(input) if input.UserInputType == En
 
 -- Atalho para abrir/fechar
 UserInputService.InputBegan:Connect(function(input, gpe)
-	if not gpe and input.KeyCode == Enum.KeyCode.J then ScreenGui.Enabled = not ScreenGui.Enabled end
+	if not gpe and input.KeyCode == Enum.KeyCode.J then
+		MinizeWindows()
+	end
 end)
+
+MinBtn.Activated:Connect(function()
+	MinizeWindows()
+end)
+
 
 CloseBtn.Activated:Connect(function() ScreenGui:Destroy() end)
 
 FlyBtn.Activated:Connect(function()
 	Fly_Enabled = not Fly_Enabled
 	FlyBtn.Text = "Voo (Fly): " .. (Fly_Enabled and "ON" or "OFF")
-	FlyBtn.BackgroundColor3 = Fly_Enabled and Color3.fromRGB(0, 120, 255) or Color3.fromRGB(35, 35, 35)
 
 	local char = LocalPlayer.Character
 	if not char or not char:FindFirstChild("HumanoidRootPart") then return end
@@ -657,6 +725,13 @@ FlyBtn.Activated:Connect(function()
 	end
 end)
 
+-- Noclip & InfJump (Mantidos da V5)
+NoclipBtn.Activated:Connect(function()
+	Noclip_Enabled = not Noclip_Enabled
+	NoclipBtn.Text = "Noclip: " .. (Noclip_Enabled and "ON" or "OFF")
+end)
+
+
 SpeedToggle.Activated:Connect(function()
 	Speed_Enabled = not Speed_Enabled
 	SpeedToggle.Text = "Speed: " .. (Speed_Enabled and "ON" or "OFF")
@@ -676,6 +751,12 @@ TweenBtn.Activated:Connect(function()
 	TweenTP_Enabled = not TweenTP_Enabled
 	TweenBtn.Text = "Tween Player: " .. (TweenTP_Enabled and "ON" or "OFF")
 end)
+
+InfJumpBtn.Activated:Connect(function()
+	InfJump_Enabled = not InfJump_Enabled
+	InfJumpBtn.Text = "Pulo Infinito: " .. (InfJump_Enabled and "ON" or "OFF")
+end)
+
 
 -- aplica quando spawnar
 LocalPlayer.CharacterAdded:Connect(function(char)
