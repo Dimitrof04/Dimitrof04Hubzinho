@@ -454,7 +454,7 @@ RunService.RenderStepped:Connect(function()
 	
 	--Spin
 	if Spin_Enabled and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
-		LocalPlayer.Character.HumanoidRootPart.CFrame *= CFrame.Angles(0, math.rad(10), 0)
+		LocalPlayer.Character.HumanoidRootPart.CFrame *= CFrame.Angles(0, math.rad(100), 0)
 	end
 
 	-- ESP
