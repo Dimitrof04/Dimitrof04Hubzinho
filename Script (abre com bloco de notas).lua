@@ -27,6 +27,10 @@ ScreenGui.IgnoreGuiInset = true
 script.Parent = ScreenGui
 
 -- --- Variáveis de Estado ---
+-- DRAG DO BOTÃO MINI
+local draggingMini = false
+local dragStartMini
+local startPosMini
 local ESP_Enabled = false
 local Aimbot_Enabled = false
 local Hitbox_Enabled = false
@@ -45,6 +49,18 @@ local FlySpeed = 50
 local AimSmoothness = 0.2
 local FOV = 200
 local Minimized = false
+
+-- MainMiniButton
+local MainMiniButton = Instance.new("TextButton") --butaozinho
+MainMiniButton.Name = "MainMiniButton"
+MainMiniButton.Size = UDim2.new(0.061, 0,0.109, 0)
+MainMiniButton.Position = UDim2.new(0.052, 0,0.093, 0)
+MainMiniButton.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+MainMiniButton.Text = "D04"
+MainMiniButton.TextScaled = true
+MainMiniButton.BorderSizePixel = 0
+MainMiniButton.Parent = ScreenGui
+Instance.new("UICorner", MainMiniButton).CornerRadius = UDim.new(1,0)
 
 -- Estrutura da Janela Principal
 local MainFrame = Instance.new("Frame")
@@ -144,7 +160,7 @@ local function OpenTab(tabName)
 end
 
 local function MinizeWindows()
-	ScreenGui.Enabled = not ScreenGui.Enabled
+	MainFrame.Visible  = not MainFrame.Visible
 end
 
 local function AutoShoot()
@@ -607,6 +623,7 @@ end)
 
 -- Arrastar Janela
 local dragging, dragStart, startPos
+
 TopBar.InputBegan:Connect(function(input)
 	if input.UserInputType == Enum.UserInputType.MouseButton1 then
 		dragging = true
@@ -615,13 +632,39 @@ TopBar.InputBegan:Connect(function(input)
 	end
 end)
 
+MainMiniButton.InputBegan:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 then
+		draggingMini = true
+		dragStartMini = input.Position
+		startPosMini = MainMiniButton.Position
+	end
+end)
+
 UserInputService.InputChanged:Connect(function(input)
 	if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
 		local delta = input.Position - dragStart
 		MainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
 	end
+	if draggingMini and input.UserInputType == Enum.UserInputType.MouseMovement then
+		local delta = input.Position - dragStartMini
+
+		MainMiniButton.Position = UDim2.new(
+			startPosMini.X.Scale,
+			startPosMini.X.Offset + delta.X,
+			startPosMini.Y.Scale,
+			startPosMini.Y.Offset + delta.Y
+		)
+	end
 end)
-UserInputService.InputEnded:Connect(function(input) if input.UserInputType == Enum.UserInputType.MouseButton1 then dragging = false end end)
+
+UserInputService.InputEnded:Connect(function(input) 
+	if input.UserInputType == Enum.UserInputType.MouseButton1 then 
+		dragging = false 
+	end
+	if input.UserInputType == Enum.UserInputType.MouseButton1 then
+		draggingMini = false
+	end
+end)
 
 -- Atalho para abrir/fechar
 UserInputService.InputBegan:Connect(function(input, gpe)
@@ -634,6 +677,9 @@ MinBtn.Activated:Connect(function()
 	MinizeWindows()
 end)
 
+MainMiniButton.Activated:Connect(function()
+	MinizeWindows()
+end)
 
 CloseBtn.Activated:Connect(function() ScreenGui:Destroy() end)
 
