@@ -188,9 +188,11 @@ OpenTab("LocalPlayer")
 local function CreateButton(text, parent)
 	local btn = Instance.new("TextButton")
 	btn.Size = UDim2.new(0.95, 0, 0, 35)
-	btn.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+	btn.BackgroundColor3 = Color3.fromRGB(30, 30, 30) -- NÃO deixa transparente
+	btn.BackgroundTransparency = 0
 	btn.Text = text .. ": OFF"
-	btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+	btn.TextColor3 = Color3.fromRGB(0, 89, 255)
+	btn.TextScaled = true
 	btn.Font = Enum.Font.GothamMedium
 	btn.TextSize = 14
 	btn.Parent = parent
@@ -379,35 +381,40 @@ local function UpdatePlayerList()
 	for _, player in pairs(Players:GetPlayers()) do
 		if player ~= LocalPlayer then
 
-			-- ✅ CRIAR BOTÃO
 			local btn = Instance.new("TextButton")
-			btn.Size = UDim2.new(0.938, 0, 0.23, 0)
-			btn.Text = player.DisplayName .. " (@" .. player.Name .. ")"
+			btn.Size = UDim2.new(0.95, 0, 0, 30)
+			btn.Text = player.Name
 			btn.Parent = PlayerScroll
-			btn.BackgroundTransparency = 1
-			btn.TextColor3 = Color3.fromRGB(0, 187, 255)
 
-			-- ✅ CLICK → COLOCAR NO INPUT
+			-- VISUAL
+			btn.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+			btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+			btn.TextScaled = true
+			btn.Font = Enum.Font.GothamBold
+			
+			local char = player.Character or player.CharacterAdded:Wait()
+			local hrp = char:WaitForChild("HumanoidRootPart", 2)
+			
 			btn.Activated:Connect(function()
-				TPInput.Text = player.Name
-			end)
-			
-			
-			-- ✅ HITBOX
-			if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-				local hrp = player.Character.HumanoidRootPart
+				if char and char:FindFirstChild("HumanoidRootPart") then
+					local targetCF = char.HumanoidRootPart.CFrame * CFrame.new(0,0,-3)
 
-				if Hitbox_Enabled then
-					hrp.Size = Vector3.new(10,10,10)
-					hrp.Transparency = 0.7
-					hrp.Material = Enum.Material.Neon
-					hrp.CanCollide = false
-				else
-					hrp.Size = Vector3.new(2,2,1)
-					hrp.Transparency = 0
-					hrp.Material = Enum.Material.Plastic
+					if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+						local myHRP = LocalPlayer.Character.HumanoidRootPart
+
+						if TweenTP_Enabled then
+							local tween = TweenService:Create(
+								myHRP,
+								TweenInfo.new(0.5, Enum.EasingStyle.Linear),
+								{CFrame = targetCF}
+							)
+							tween:Play()
+						else
+							myHRP.CFrame = targetCF
+						end
+					end
 				end
-			end
+			end)
 		end
 	end
 	
