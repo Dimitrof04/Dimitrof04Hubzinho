@@ -90,7 +90,7 @@ local Title = Instance.new("TextLabel")
 Title.Size = UDim2.new(1, -100, 1, 0)
 Title.Position = UDim2.new(0, 15, 0, 0)
 Title.BackgroundTransparency = 1
-Title.Text = "~ Dimitrof04 Hub (V3) ~ "
+Title.Text = "~ Dimitrof04 Hub (V3.5) ~ "
 Title.TextColor3 = Color3.fromRGB(255, 255, 255)
 Title.TextXAlignment = Enum.TextXAlignment.Left
 Title.Font = Enum.Font.GothamBold
@@ -766,5 +766,5 @@ LocalPlayer.CharacterAdded:Connect(function(char)
 	ApplyStats(char)
 end)
 
-print("Dimitrof04 Hub V3 Carregado - Use 'J' para ocultar")
+print("Dimitrof04 Hub V3.5 Carregado - Use 'J' para ocultar")
 print("Fly : WASD move L-s abaixar Space Subir")
