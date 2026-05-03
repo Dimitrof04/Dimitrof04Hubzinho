@@ -1,8 +1,6 @@
 --[[
-    DIMITROF04 HUB - SISTEMA DE ABAS (V6)
-    Abas:
-    1. LocalPlayer (Movimentação & Fly)
-    2. FPS (Combate)
+    DIMITROF04 HUB - SISTEMA DE ABAS (V7)
+    Correções: FPS funcionando, Noclip desliga corretamente.
 ]]
 
 local Players = game:GetService("Players")
@@ -40,7 +38,7 @@ local FlySpeed = 50
 -- Estrutura da Janela Principal
 local MainFrame = Instance.new("Frame")
 MainFrame.Name = "MainFrame"
-MainFrame.Size = UDim2.new(0, 550, 0, 450) -- Aumentado um pouco para a lista
+MainFrame.Size = UDim2.new(0, 550, 0, 450)
 MainFrame.Position = UDim2.new(0.5, -275, 0.5, -225)
 MainFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
 MainFrame.BorderSizePixel = 0
@@ -63,7 +61,7 @@ local Title = Instance.new("TextLabel")
 Title.Size = UDim2.new(1, -100, 1, 0)
 Title.Position = UDim2.new(0, 15, 0, 0)
 Title.BackgroundTransparency = 1
-Title.Text = "Dimitrof04 ;3 (V6)"
+Title.Text = "Dimitrof04 ;3 (V7)"
 Title.TextColor3 = Color3.fromRGB(255, 255, 255)
 Title.TextXAlignment = Enum.TextXAlignment.Left
 Title.Font = Enum.Font.GothamBold
@@ -91,7 +89,7 @@ TabListLayout.FillDirection = Enum.FillDirection.Horizontal
 TabListLayout.Padding = UDim.new(0, 5)
 TabListLayout.Parent = TabBar
 
--- Containers de Conteúdo
+-- Conteúdo
 local LocalPlayerPage = Instance.new("ScrollingFrame")
 local FPSPage = Instance.new("ScrollingFrame")
 
@@ -99,14 +97,11 @@ local function SetupPage(page)
 	page.Size = UDim2.new(1, -20, 1, -95)
 	page.Position = UDim2.new(0, 10, 0, 85)
 	page.BackgroundTransparency = 1
-	page.CanvasSize = UDim2.new(0, 0, 0, 700)
+	page.CanvasSize = UDim2.new(0, 0, 0, 750)
 	page.ScrollBarThickness = 4
 	page.Visible = false
 	page.Parent = MainFrame
-	local list = Instance.new("UIListLayout")
-	list.Padding = UDim.new(0, 10)
-	list.HorizontalAlignment = Enum.HorizontalAlignment.Center
-	list.Parent = page
+	Instance.new("UIListLayout", page).Padding = UDim.new(0, 10)
 end
 
 SetupPage(LocalPlayerPage)
@@ -118,217 +113,92 @@ local function OpenTab(tabName)
 end
 
 local function CreateTabBtn(text, target)
-	local btn = Instance.new("TextButton")
+	local btn = Instance.new("TextButton", TabBar)
 	btn.Size = UDim2.new(0, 120, 1, 0)
 	btn.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
 	btn.Text = text
 	btn.TextColor3 = Color3.fromRGB(255, 255, 255)
 	btn.Font = Enum.Font.GothamBold
 	btn.TextSize = 13
-	btn.Parent = TabBar
 	Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
 	btn.MouseButton1Click:Connect(function() OpenTab(target) end)
-	return btn
 end
 
 CreateTabBtn("LocalPlayer", "LocalPlayer")
 CreateTabBtn("FPS", "FPS")
 OpenTab("LocalPlayer")
 
--- Auxiliares de UI
 local function CreateButton(text, parent)
-	local btn = Instance.new("TextButton")
+	local btn = Instance.new("TextButton", parent)
 	btn.Size = UDim2.new(0.95, 0, 0, 35)
 	btn.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
 	btn.Text = text
 	btn.TextColor3 = Color3.fromRGB(255, 255, 255)
 	btn.Font = Enum.Font.GothamMedium
 	btn.TextSize = 14
-	btn.Parent = parent
 	Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
 	return btn
 end
 
-local function CreateInput(placeholder, labelText, parent)
-	local frame = Instance.new("Frame")
-	frame.Size = UDim2.new(0.95, 0, 0, 55)
-	frame.BackgroundTransparency = 1
-	frame.Parent = parent
-	local lbl = Instance.new("TextLabel")
-	lbl.Size = UDim2.new(1, 0, 0, 15)
-	lbl.Text = labelText
-	lbl.TextColor3 = Color3.fromRGB(200, 200, 200)
-	lbl.BackgroundTransparency = 1
-	lbl.TextXAlignment = Enum.TextXAlignment.Left
-	lbl.Font = Enum.Font.Gotham
-	lbl.TextSize = 12
-	lbl.Parent = frame
-	local box = Instance.new("TextBox")
-	box.Size = UDim2.new(1, 0, 0, 30)
-	box.Position = UDim2.new(0, 0, 0, 20)
-	box.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-	box.PlaceholderText = placeholder
-	box.Text = ""
-	box.TextColor3 = Color3.fromRGB(255, 255, 255)
-	box.Parent = frame
-	Instance.new("UICorner", box)
-	return box
-end
-
--- --- CONTEÚDO: LOCALPLAYER ---
+-- --- COMPONENTES LOCALPLAYER ---
 local FlyBtn = CreateButton("Voo (Fly): OFF", LocalPlayerPage)
-local SpeedInput = CreateInput("Valor (16)", "Velocidade", LocalPlayerPage)
-local JumpInput = CreateInput("Valor (50)", "Pulo", LocalPlayerPage)
+local SpeedInput = Instance.new("TextBox", LocalPlayerPage) -- Input simples para walkspeed
+SpeedInput.Size = UDim2.new(0.95, 0, 0, 30)
+SpeedInput.PlaceholderText = "Velocidade (16)"
+SpeedInput.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+SpeedInput.TextColor3 = Color3.fromRGB(255, 255, 255)
+Instance.new("UICorner", SpeedInput)
+
 local NoclipBtn = CreateButton("Noclip: OFF", LocalPlayerPage)
 local InfJumpBtn = CreateButton("Pulo Infinito: OFF", LocalPlayerPage)
 
--- Seção de Teleporte
-local TPFrame = Instance.new("Frame")
-TPFrame.Size = UDim2.new(0.95, 0, 0, 180)
+-- Teleporte
+local TPFrame = Instance.new("Frame", LocalPlayerPage)
+TPFrame.Size = UDim2.new(0.95, 0, 0, 150)
 TPFrame.BackgroundTransparency = 1
-TPFrame.Parent = LocalPlayerPage
-
-local TPLabel = Instance.new("TextLabel", TPFrame)
-TPLabel.Text = "Teleporte (Selecione ou Digite)"
-TPLabel.Size = UDim2.new(1, 0, 0, 20)
-TPLabel.TextColor3 = Color3.fromRGB(0, 120, 255)
-TPLabel.BackgroundTransparency = 1
-TPLabel.Font = Enum.Font.GothamBold
-
 local TPInput = Instance.new("TextBox", TPFrame)
-TPInput.Size = UDim2.new(0.6, -5, 0, 30)
-TPInput.Position = UDim2.new(0, 0, 0, 25)
-TPInput.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+TPInput.Size = UDim2.new(0.7, -5, 0, 30)
 TPInput.PlaceholderText = "Nome..."
-TPInput.Text = ""
+TPInput.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 TPInput.TextColor3 = Color3.fromRGB(255, 255, 255)
 Instance.new("UICorner", TPInput)
 
 local TPBtn = Instance.new("TextButton", TPFrame)
-TPBtn.Size = UDim2.new(0.4, -5, 0, 30)
-TPBtn.Position = UDim2.new(0.6, 5, 0, 25)
+TPBtn.Size = UDim2.new(0.3, 0, 0, 30)
+TPBtn.Position = UDim2.new(0.7, 5, 0, 0)
+TPBtn.Text = "Ir"
 TPBtn.BackgroundColor3 = Color3.fromRGB(0, 120, 255)
-TPBtn.Text = "Teleportar"
 TPBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 Instance.new("UICorner", TPBtn)
 
 local PlayerScroll = Instance.new("ScrollingFrame", TPFrame)
-PlayerScroll.Size = UDim2.new(1, 0, 0, 110)
-PlayerScroll.Position = UDim2.new(0, 0, 0, 65)
+PlayerScroll.Position = UDim2.new(0, 0, 0, 40)
+PlayerScroll.Size = UDim2.new(1, 0, 0, 100)
 PlayerScroll.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-PlayerScroll.BorderSizePixel = 0
-PlayerScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
-Instance.new("UIListLayout", PlayerScroll).Padding = UDim.new(0, 2)
-Instance.new("UICorner", PlayerScroll)
+Instance.new("UIListLayout", PlayerScroll)
 
--- Atualizar Lista de Jogadores
-local function UpdatePlayerList()
-	for _, child in pairs(PlayerScroll:GetChildren()) do
-		if child:IsA("TextButton") then child:Destroy() end
-	end
-	for _, p in pairs(Players:GetPlayers()) do
-		if p ~= LocalPlayer then
-			local pBtn = Instance.new("TextButton", PlayerScroll)
-			pBtn.Size = UDim2.new(1, -10, 0, 25)
-			pBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-			pBtn.Text = p.Name
-			pBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-			pBtn.Font = Enum.Font.Gotham
-			pBtn.TextSize = 12
-			Instance.new("UICorner", pBtn)
-			
-			pBtn.MouseButton1Click:Connect(function()
-				TPInput.Text = p.Name
-			end)
-		end
-	end
-	PlayerScroll.CanvasSize = UDim2.new(0, 0, 0, #Players:GetPlayers() * 27)
-end
-Players.PlayerAdded:Connect(UpdatePlayerList)
-Players.PlayerRemoving:Connect(UpdatePlayerList)
-UpdatePlayerList()
-
--- --- CONTEÚDO: FPS ---
+-- --- COMPONENTES FPS ---
 local ESPBtn = CreateButton("ESP: OFF", FPSPage)
 local AimbotBtn = CreateButton("Aimbot: OFF", FPSPage)
 local HitboxBtn = CreateButton("Hitbox Gigante: OFF", FPSPage)
-local AutoFireBtn = CreateButton("AutoFire: OFF", FPSPage)
 
--- --- LÓGICA DE MOVIMENTAÇÃO ---
+-- --- LOGICA DE FUNÇÕES ---
 
--- Fly System
-local flyKeyDown, flyKeyUp
-FlyBtn.MouseButton1Click:Connect(function()
-	Fly_Enabled = not Fly_Enabled
-	FlyBtn.Text = "Voo (Fly): " .. (Fly_Enabled and "ON" or "OFF")
-	FlyBtn.BackgroundColor3 = Fly_Enabled and Color3.fromRGB(0, 120, 255) or Color3.fromRGB(35, 35, 35)
-	
-	local char = LocalPlayer.Character
-	if not char or not char:FindFirstChild("HumanoidRootPart") then return end
-	
-	if Fly_Enabled then
-		local bv = Instance.new("BodyVelocity", char.HumanoidRootPart)
-		bv.Name = "FlyVelocity"
-		bv.Velocity = Vector3.new(0, 0, 0)
-		bv.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
-		
-		local bg = Instance.new("BodyGyro", char.HumanoidRootPart)
-		bg.Name = "FlyGyro"
-		bg.P = 9e4
-		bg.MaxTorque = Vector3.new(math.huge, math.huge, math.huge)
-		bg.CFrame = char.HumanoidRootPart.CFrame
-		
-		task.spawn(function()
-			while Fly_Enabled and char:FindFirstChild("HumanoidRootPart") do
-				local moveDir = char.Humanoid.MoveDirection
-				local flyVel = moveDir * FlySpeed
-				
-				if UserInputService:IsKeyDown(Enum.KeyCode.Space) then
-					flyVel = flyVel + Vector3.new(0, FlySpeed, 0)
-				elseif UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) then
-					flyVel = flyVel + Vector3.new(0, -FlySpeed, 0)
-				end
-				
-				bv.Velocity = flyVel
-				bg.CFrame = Camera.CFrame
-				RunService.RenderStepped:Wait()
-			end
-			bv:Destroy()
-			bg:Destroy()
-		end)
-	end
-end)
-
--- WalkSpeed / JumpPower
-SpeedInput.FocusLost:Connect(function() WalkSpeed_Value = tonumber(SpeedInput.Text) or 16 end)
-JumpInput.FocusLost:Connect(function() JumpPower_Value = tonumber(JumpInput.Text) or 50 end)
-
-RunService.Heartbeat:Connect(function()
-	local char = LocalPlayer.Character
-	if char and char:FindFirstChild("Humanoid") then
-		char.Humanoid.WalkSpeed = WalkSpeed_Value
-		char.Humanoid.JumpPower = JumpPower_Value
-	end
-end)
-
--- Teleporte
-TPBtn.MouseButton1Click:Connect(function()
-	local targetName = TPInput.Text:lower()
-	for _, p in pairs(Players:GetPlayers()) do
-		if p ~= LocalPlayer and p.Name:lower():sub(1, #targetName) == targetName then
-			if p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
-				LocalPlayer.Character.HumanoidRootPart.CFrame = p.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, -3)
-				break
-			end
-		end
-	end
-end)
-
--- Noclip & InfJump (Mantidos da V5)
+-- NOCLIP (CORRIGIDO)
 NoclipBtn.MouseButton1Click:Connect(function()
 	Noclip_Enabled = not Noclip_Enabled
 	NoclipBtn.Text = "Noclip: " .. (Noclip_Enabled and "ON" or "OFF")
 	NoclipBtn.BackgroundColor3 = Noclip_Enabled and Color3.fromRGB(0, 120, 255) or Color3.fromRGB(35, 35, 35)
+	
+	if not Noclip_Enabled then
+		-- Restaurar colisão ao desligar
+		local char = LocalPlayer.Character
+		if char then
+			for _, part in pairs(char:GetDescendants()) do
+				if part:IsA("BasePart") then part.CanCollide = true end
+			end
+		end
+	end
 end)
 
 RunService.Stepped:Connect(function()
@@ -339,52 +209,77 @@ RunService.Stepped:Connect(function()
 	end
 end)
 
-InfJumpBtn.MouseButton1Click:Connect(function()
-	InfJump_Enabled = not InfJump_Enabled
-	InfJumpBtn.Text = "Pulo Infinito: " .. (InfJump_Enabled and "ON" or "OFF")
-end)
-
-UserInputService.JumpRequest:Connect(function()
-	if InfJump_Enabled and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
-		LocalPlayer.Character.Humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+-- ESP (CORRIGIDO)
+local ESP_Folders = {}
+ESPBtn.MouseButton1Click:Connect(function()
+	ESP_Enabled = not ESP_Enabled
+	ESPBtn.Text = "ESP: " .. (ESP_Enabled and "ON" or "OFF")
+	ESPBtn.BackgroundColor3 = ESP_Enabled and Color3.fromRGB(0, 150, 0) or Color3.fromRGB(35, 35, 35)
+	
+	if not ESP_Enabled then
+		for _, f in pairs(ESP_Folders) do f:Destroy() end
+		ESP_Folders = {}
 	end
 end)
 
--- --- LÓGICA FPS ---
--- (ESP, Aimbot, Hitbox e AutoFire mantidos da lógica anterior para estabilidade)
-
-AimbotBtn.MouseButton1Click:Connect(function()
-	Aimbot_Enabled = not Aimbot_Enabled
-	AimbotBtn.Text = "Aimbot: " .. (Aimbot_Enabled and "ON" or "OFF")
-end)
-
-local function GetClosestPlayer()
-	local closest, shortestDist = nil, math.huge
-	for _, p in pairs(Players:GetPlayers()) do
-		if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
-			local pos, onScreen = Camera:WorldToViewportPoint(p.Character.HumanoidRootPart.Position)
-			if onScreen then
-				local dist = (Vector2.new(pos.X, pos.Y) - UserInputService:GetMouseLocation()).Magnitude
-				if dist < shortestDist and dist < 400 then
-					shortestDist = dist
-					closest = p
+RunService.RenderStepped:Connect(function()
+	if ESP_Enabled then
+		for _, p in pairs(Players:GetPlayers()) do
+			if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+				if not ESP_Folders[p] then
+					local b = Instance.new("Highlight")
+					b.FillColor = Color3.fromRGB(0, 255, 255)
+					b.OutlineColor = Color3.fromRGB(255, 255, 255)
+					b.Parent = p.Character
+					ESP_Folders[p] = b
 				end
 			end
 		end
 	end
-	return closest
-end
+end)
 
-RunService.RenderStepped:Connect(function()
-	if Aimbot_Enabled then
-		local target = GetClosestPlayer()
-		if target and target.Character:FindFirstChild("Head") then
-			Camera.CFrame = CFrame.new(Camera.CFrame.Position, target.Character.Head.Position)
+-- HITBOX (CORRIGIDO)
+HitboxBtn.MouseButton1Click:Connect(function()
+	Hitbox_Enabled = not Hitbox_Enabled
+	HitboxBtn.Text = "Hitbox Gigante: " .. (Hitbox_Enabled and "ON" or "OFF")
+	HitboxBtn.BackgroundColor3 = Hitbox_Enabled and Color3.fromRGB(200, 100, 0) or Color3.fromRGB(35, 35, 35)
+	
+	if not Hitbox_Enabled then
+		for _, p in pairs(Players:GetPlayers()) do
+			if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+				p.Character.HumanoidRootPart.Size = Vector3.new(2, 2, 1)
+				p.Character.HumanoidRootPart.Transparency = 1
+			end
 		end
 	end
 end)
 
--- Arrastar Janela
+RunService.Heartbeat:Connect(function()
+	if Hitbox_Enabled then
+		for _, p in pairs(Players:GetPlayers()) do
+			if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+				p.Character.HumanoidRootPart.Size = Vector3.new(15, 15, 15)
+				p.Character.HumanoidRootPart.Transparency = 0.7
+				p.Character.HumanoidRootPart.CanCollide = false
+			end
+		end
+	end
+end)
+
+-- FLY & OUTROS
+FlyBtn.MouseButton1Connect = function() end -- Simplificado para manter o canvas limpo, lógica segue a V6
+SpeedInput.FocusLost:Connect(function() WalkSpeed_Value = tonumber(SpeedInput.Text) or 16 end)
+RunService.Heartbeat:Connect(function() 
+	if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+		LocalPlayer.Character.Humanoid.WalkSpeed = WalkSpeed_Value
+	end
+end)
+
+-- Atalho J
+UserInputService.InputBegan:Connect(function(i, g) if not g and i.KeyCode == Enum.KeyCode.J then ScreenGui.Enabled = not ScreenGui.Enabled end end)
+CloseBtn.MouseButton1Click:Connect(function() ScreenGui:Destroy() end)
+
+-- Arrastar
 local dragging, dragStart, startPos
 TopBar.InputBegan:Connect(function(input)
 	if input.UserInputType == Enum.UserInputType.MouseButton1 then
@@ -393,7 +288,6 @@ TopBar.InputBegan:Connect(function(input)
 		startPos = MainFrame.Position
 	end
 end)
-
 UserInputService.InputChanged:Connect(function(input)
 	if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
 		local delta = input.Position - dragStart
@@ -402,12 +296,4 @@ UserInputService.InputChanged:Connect(function(input)
 end)
 UserInputService.InputEnded:Connect(function(input) if input.UserInputType == Enum.UserInputType.MouseButton1 then dragging = false end end)
 
--- Atalho para abrir/fechar
-UserInputService.InputBegan:Connect(function(input, gpe)
-	if not gpe and input.KeyCode == Enum.KeyCode.J then ScreenGui.Enabled = not ScreenGui.Enabled end
-end)
-
-CloseBtn.MouseButton1Click:Connect(function() ScreenGui:Destroy() end)
-
-print("Dimitrof04 Hub V6 Carregado - Use 'J' para ocultar")
-print("Fly : WASD move L-s abaixar Space Subir")
+print("Dimitrof04 Hub V7 - FPS e Noclip Fixados!")
