@@ -40,7 +40,10 @@ local InfJump_Enabled = false
 local Fly_Enabled = false
 local WalkSpeed_Value = 16
 local JumpPower_Value = 50
+local SpinSpeed_Value = 75
 local FlySpeed = 50
+local AimSmoothness = 0.2
+local FOV = 200
 
 -- Estrutura da Janela Principal
 local MainFrame = Instance.new("Frame")
@@ -68,7 +71,7 @@ local Title = Instance.new("TextLabel")
 Title.Size = UDim2.new(1, -100, 1, 0)
 Title.Position = UDim2.new(0, 15, 0, 0)
 Title.BackgroundTransparency = 1
-Title.Text = "~ Dimitrof04 Hub (V2.1) ~ "
+Title.Text = "~ Dimitrof04 Hub (V3) ~ "
 Title.TextColor3 = Color3.fromRGB(255, 255, 255)
 Title.TextXAlignment = Enum.TextXAlignment.Left
 Title.Font = Enum.Font.GothamBold
@@ -199,11 +202,77 @@ local function CreateInput(placeholder, labelText, parent)
 	return box
 end
 
+local function CreateSlider(labelText, min, max, default, parent, callback)
+	local frame = Instance.new("Frame")
+	frame.Size = UDim2.new(0.95, 0, 0, 50)
+	frame.BackgroundTransparency = 1
+	frame.Parent = parent
+
+	local label = Instance.new("TextLabel")
+	label.Size = UDim2.new(1, 0, 0, 15)
+	label.Text = labelText .. ": " .. default
+	label.TextColor3 = Color3.fromRGB(200,200,200)
+	label.BackgroundTransparency = 1
+	label.TextXAlignment = Enum.TextXAlignment.Left
+	label.Font = Enum.Font.Gotham
+	label.TextSize = 12
+	label.Parent = frame
+
+	local bar = Instance.new("Frame")
+	bar.Size = UDim2.new(1, 0, 0, 10)
+	bar.Position = UDim2.new(0, 0, 0, 25)
+	bar.BackgroundColor3 = Color3.fromRGB(40,40,40)
+	bar.Parent = frame
+	Instance.new("UICorner", bar)
+
+	local fill = Instance.new("Frame")
+	fill.Size = UDim2.new((default-min)/(max-min), 0, 1, 0)
+	fill.BackgroundColor3 = Color3.fromRGB(0,120,255)
+	fill.Parent = bar
+	Instance.new("UICorner", fill)
+
+	local dragging = false
+
+	bar.InputBegan:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseButton1 then
+			dragging = true
+		end
+	end)
+
+	bar.InputEnded:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseButton1 then
+			dragging = false
+		end
+	end)
+
+	UserInputService.InputChanged:Connect(function(input)
+		if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+			local percent = math.clamp((input.Position.X - bar.AbsolutePosition.X) / bar.AbsoluteSize.X, 0, 1)
+			fill.Size = UDim2.new(percent, 0, 1, 0)
+
+			local value = math.floor(min + (max - min) * percent)
+			label.Text = labelText .. ": " .. value
+
+			callback(value)
+		end
+	end)
+end
+
+CreateSlider("Velocidade", 10, 1000, 16, LocalPlayerPage, function(val)
+	WalkSpeed_Value = val
+end)
+
+CreateSlider("Pulo", 10, 500, 50, LocalPlayerPage, function(val)
+	JumpPower_Value = val
+end)
+
+CreateSlider("Fly Speed", 10, 750, 50, LocalPlayerPage, function(val)
+	FlySpeed = val
+end)
+
 -- --- CONTEÚDO: LOCALPLAYER ---
 local FlyBtn = CreateButton("Voo (Fly): OFF", LocalPlayerPage)
-local SpeedInput = CreateInput("Valor (16)", "Velocidade", LocalPlayerPage)
 local SpeedToggle = CreateButton("Speed: ON", LocalPlayerPage)
-local JumpInput = CreateInput("Valor (50)", "Pulo", LocalPlayerPage)
 local JumpToggle = CreateButton("Jump: ON", LocalPlayerPage)
 local NoclipBtn = CreateButton("Noclip: OFF", LocalPlayerPage)
 local InfJumpBtn = CreateButton("Pulo Infinito: OFF", LocalPlayerPage)
@@ -253,22 +322,24 @@ local function UpdatePlayerList()
 	for _, child in pairs(PlayerScroll:GetChildren()) do
 		if child:IsA("TextButton") then child:Destroy() end
 	end
+	
 	for _, p in pairs(Players:GetPlayers()) do
-		if p ~= LocalPlayer then
-			local pBtn = Instance.new("TextButton", PlayerScroll)
-			pBtn.Size = UDim2.new(1, -10, 0, 25)
-			pBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-			pBtn.Text = p.Name
-			pBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-			pBtn.Font = Enum.Font.Gotham
-			pBtn.TextSize = 12
-			Instance.new("UICorner", pBtn)
+		if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+			local hrp = p.Character.HumanoidRootPart
 
-			pBtn.Activated:Connect(function()
-				TPInput.Text = p.Name
-			end)
+			if Hitbox_Enabled then
+				hrp.Size = Vector3.new(10,10,10)
+				hrp.Transparency = 0.7
+				hrp.Material = Enum.Material.Neon
+				hrp.CanCollide = false
+			else
+				hrp.Size = Vector3.new(2,2,1)
+				hrp.Transparency = 0
+				hrp.Material = Enum.Material.Plastic
+			end
 		end
 	end
+	
 	PlayerScroll.CanvasSize = UDim2.new(0, 0, 0, #Players:GetPlayers() * 27)
 end
 Players.PlayerAdded:Connect(UpdatePlayerList)
@@ -279,7 +350,12 @@ UpdatePlayerList()
 local ESPBtn = CreateButton("ESP: OFF", FPSPage)
 local AimbotBtn = CreateButton("Aimbot: OFF", FPSPage)
 local HitboxBtn = CreateButton("Hitbox Gigante: OFF", FPSPage)
-local SpinCharBtn = CreateButton("Spin Character: OFF", FPSPage) -- novo
+local SpinCharBtn = CreateButton("Spin Character: OFF", FPSPage)
+
+CreateSlider("SpinSpeed", 10, 300, 75, FPSPage, function(val)
+	SpinSpeed_Value = val
+end)
+
 --local AutoFireBtn = CreateButton("AutoFire: OFF", FPSPage)
 
 ESPBtn.Activated:Connect(function()
@@ -292,6 +368,7 @@ end)
 -- Fly System
 local flyKeyDown, flyKeyUp
 
+--[[
 -- WalkSpeed / JumpPower
 SpeedInput.FocusLost:Connect(function()
 	WalkSpeed_Value = tonumber(SpeedInput.Text) or 16
@@ -311,6 +388,7 @@ JumpInput.FocusLost:Connect(function()
 	end
 end)
 
+]]
 HitboxBtn.Activated:Connect(function()
 	Hitbox_Enabled = not Hitbox_Enabled
 	HitboxBtn.Text = "Hitbox Gigante: " .. (Hitbox_Enabled and "ON" or "OFF")
@@ -427,7 +505,7 @@ local function GetClosestPlayer()
 			local pos, onScreen = Camera:WorldToViewportPoint(p.Character.HumanoidRootPart.Position)
 			if onScreen then
 				local dist = (Vector2.new(pos.X, pos.Y) - UserInputService:GetMouseLocation()).Magnitude
-				if dist < shortestDist and dist < 400 then
+				if dist < shortestDist and dist < FOV then
 					shortestDist = dist
 					closest = p
 				end
@@ -448,13 +526,17 @@ RunService.RenderStepped:Connect(function()
 	if Aimbot_Enabled then
 		local target = GetClosestPlayer()
 		if target and target.Character and target.Character:FindFirstChild("Head") then
-			Camera.CFrame = CFrame.new(Camera.CFrame.Position, target.Character.Head.Position)
+			local targetPos = target.Character.Head.Position
+			local current = Camera.CFrame.Position
+
+			local newCF = CFrame.new(current, targetPos)
+			Camera.CFrame = Camera.CFrame:Lerp(newCF, AimSmoothness)
 		end
 	end
 	
 	--Spin
 	if Spin_Enabled and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
-		LocalPlayer.Character.HumanoidRootPart.CFrame *= CFrame.Angles(0, math.rad(100), 0)
+		LocalPlayer.Character.HumanoidRootPart.CFrame *= CFrame.Angles(0, math.rad(SpinSpeed_Value), 0)
 	end
 
 	-- ESP
@@ -462,6 +544,8 @@ RunService.RenderStepped:Connect(function()
 		if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("Head") then
 
 			if ESP_Enabled then
+				local folder = Instance.new("Folder", p.Character)
+				folder.Name = "ESP_FOLDER"
 				if not p.Character.Head:FindFirstChild("ESP") then
 					local bill = Instance.new("BillboardGui", p.Character.Head)
 					bill.Name = "ESP"
@@ -493,11 +577,15 @@ RunService.RenderStepped:Connect(function()
 			end
 		end
 	end
-	-- AUTO FIRE
-	if AutoFire_Enabled then
-		AutoShoot()
-		task.wait(0.05)
-	end
+	
+	task.spawn(function()
+		while true do
+			if AutoFire_Enabled then
+				AutoShoot()
+			end
+			task.wait(0.05)
+		end
+	end)
 end)
 
 -- Arrastar Janela
@@ -596,5 +684,5 @@ LocalPlayer.CharacterAdded:Connect(function(char)
 	ApplyStats(char)
 end)
 
-print("Dimitrof04 Hub V2.1 Carregado - Use 'J' para ocultar")
+print("Dimitrof04 Hub V3 Carregado - Use 'J' para ocultar")
 print("Fly : WASD move L-s abaixar Space Subir")
