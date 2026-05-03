@@ -410,3 +410,4 @@ end)
 CloseBtn.MouseButton1Click:Connect(function() ScreenGui:Destroy() end)
 
 print("Dimitrof04 Hub V6 Carregado - Use 'J' para ocultar")
+print("Fly : WASD move L-s abaixar Space Subir")
