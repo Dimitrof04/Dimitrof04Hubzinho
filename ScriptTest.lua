@@ -30,7 +30,7 @@ local PosMainJanel = {
 local ImportantesArrays = {
 	TittleBar = {
 		Max = UDim2.new(0.927, 0,1, 0),
-		Janel = UDim2.new(0.922, 0,1, 0)
+		Janel = UDim2.new(0.757, 0,1, 0)
 	},
 	sizesbuttons = {
 		Max = UDim2.new(0.023, 0, 0.875, 0),
@@ -88,8 +88,9 @@ MainMiniButton.ZIndex = 0
 Instance.new("UICorner", MainMiniButton).CornerRadius = UDim.new(0.3,0)
 
 local UIStrokeMini = Instance.new("UIStroke", MainMiniButton)
-UIStroke.Color = Color3.fromRGB(255, 255, 255)
-UIStroke.Thickness = 2
+UIStrokeMini.Color = Color3.fromRGB(71, 71, 71)
+UIStrokeMini.StrokeSizingMode = Enum.StrokeSizingMode.ScaledSize
+UIStrokeMini.Thickness = 0.03
 
 -- Estrutura da Janela Principal
 local MainFrame = Instance.new("Frame")
@@ -97,6 +98,7 @@ MainFrame.Name = "MainFrame"
 MainFrame.Size = SizesMainJanel.Janel -- Aumentado um pouco para a lista
 MainFrame.Position = PosMainJanel.Janel
 MainFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+MainFrame.BackgroundTransparency = 0.75
 MainFrame.BorderSizePixel = 0
 MainFrame.Parent = ScreenGui
 Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 10)
@@ -111,6 +113,7 @@ UIStroke.Thickness = 2
 local TopBar = Instance.new("Frame")
 TopBar.Size = UDim2.new(0.982, 0,0.089, 0)
 TopBar.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+TopBar.BackgroundTransparency = 1
 TopBar.BorderSizePixel = 0
 TopBar.Parent = MainFrame
 TopBar.Position = UDim2.new(0.018, 0,0, 0)
@@ -143,7 +146,7 @@ CloseBtn.Position = UDim2.new(1, -40,0, 2)
 CloseBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
 CloseBtn.BackgroundTransparency = 1
 CloseBtn.Text = "X"
-CloseBtn.TextColor3 = Color3.fromRGB(0, 38, 255)
+CloseBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 CloseBtn.Parent = TopBar
 CloseBtn.Font = Enum.Font.Kalam
 CloseBtn.TextScaled = true
@@ -158,7 +161,7 @@ MaxJanelSizebtn.BackgroundTransparency = 1
 MaxJanelSizebtn.Text = "[]"
 MaxJanelSizebtn.TextScaled = true
 MaxJanelSizebtn.Font = Enum.Font.Kalam
-MaxJanelSizebtn.TextColor3 = Color3.fromRGB(0, 38, 255)
+MaxJanelSizebtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 MaxJanelSizebtn.Parent = TopBar
 MaxJanelSizebtn.Name = "c"
 Instance.new("UICorner", MaxJanelSizebtn).CornerRadius = UDim.new(0, 5)
@@ -171,21 +174,21 @@ MinBtn.BackgroundTransparency = 1
 MinBtn.Text = "-"
 MinBtn.TextScaled = true
 MinBtn.Font = Enum.Font.Kalam
-MinBtn.TextColor3 = Color3.fromRGB(0, 38, 255)
+MinBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 MinBtn.Parent = TopBar
 MinBtn.Name = "b"
 Instance.new("UICorner", MinBtn).CornerRadius = UDim.new(0, 5)
 
 -- Barra de Abas
 local TabBar = Instance.new("Frame")
-TabBar.Size = UDim2.new(1, -20, 0, 35)
-TabBar.Position = UDim2.new(0, 10, 0, 45)
+TabBar.Size = UDim2.new(0.218, 0,0.855, 0)
+TabBar.Position = UDim2.new(0.018, 0,0.1, 0)
 TabBar.BackgroundTransparency = 1
 TabBar.Parent = MainFrame
 
 local TabListLayout = Instance.new("UIListLayout")
-TabListLayout.FillDirection = Enum.FillDirection.Horizontal
-TabListLayout.Padding = UDim.new(0, 5)
+TabListLayout.FillDirection = Enum.FillDirection.Vertical
+TabListLayout.Padding = UDim.new(0.03, 0)
 TabListLayout.Parent = TabBar
 
 -- Containers de Conteúdo
@@ -194,7 +197,7 @@ local FPSPage = Instance.new("ScrollingFrame")
 local MiscPage = Instance.new("ScrollingFrame")
 
 -- Seção de Teleporte
-local TPFrame = Instance.new("Frame")
+--[[local TPFrame = Instance.new("Frame")
 TPFrame.Size = UDim2.new(0.95, 0, 0, 180)
 TPFrame.BackgroundTransparency = 1
 TPFrame.Parent = LocalPlayerPage
@@ -220,7 +223,7 @@ UIListLayoutGenericoTpPlayer.VerticalAlignment = Enum.VerticalAlignment.Top
 UIListLayoutGenericoTpPlayer.SortOrder = Enum.SortOrder.Name
 UIListLayoutGenericoTpPlayer.HorizontalAlignment = Enum.HorizontalAlignment.Center
 UIListLayoutGenericoTpPlayer.Name = "UIListLayout"
-Instance.new("UICorner", PlayerScroll)
+Instance.new("UICorner", PlayerScroll)]]
 
 local Animates = {
 	MaxSize = TweenService:Create(
@@ -269,21 +272,23 @@ local function TransferirJanela()
 end
 
 local function SetupPage(page)
-	page.Size = UDim2.new(1, -20, 1, -95)
-	page.Position = UDim2.new(0, 10, 0, 85)
+	page.Size = UDim2.new(0.729, 0,0.878, 0)
+	page.Position = UDim2.new(0.252, 0,0.1, 0)
 	page.BackgroundTransparency = 1
 	page.CanvasSize = UDim2.new(0, 0, 0, 700)
 	page.ScrollBarThickness = 4
 	page.Visible = false
 	page.Parent = MainFrame
+	
 	local list = Instance.new("UIListLayout")
 	list.Padding = UDim.new(0, 10)
 	list.HorizontalAlignment = Enum.HorizontalAlignment.Center
+	list.SortOrder = Enum.SortOrder.LayoutOrder
 	list.Parent = page
 end
 
 -- Atualizar Lista de Jogadores
-local function UpdatePlayerList()
+--[[local function UpdatePlayerList()
 	for _, child in pairs(PlayerScroll:GetChildren()) do
 		if child:IsA("TextButton") then
 			child:Destroy()
@@ -339,7 +344,7 @@ local function UpdatePlayerList()
 	end
 
 	PlayerScroll.CanvasSize = UDim2.new(0, 0, 0, count * 35)
-end
+end]]
 
 local function OpenTab(tabName)
 	LocalPlayerPage.Visible = (tabName == "LocalPlayer")
@@ -390,26 +395,36 @@ end
 
 local function CreateTabBtn(text, target)
 	local btn = Instance.new("TextButton")
-	btn.Size = UDim2.new(0, 120, 1, 0)
-	btn.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+	btn.Size = UDim2.new(0.999, 0,0.126, 0)
+	btn.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+	btn.BackgroundTransparency = 0.6
 	btn.Text = text
 	btn.TextColor3 = Color3.fromRGB(255, 255, 255)
 	btn.Font = Enum.Font.GothamBold
-	btn.TextSize = 13
+	btn.TextScaled = true
+	btn.TextSize = 1
 	btn.Parent = TabBar
 	Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
 	btn.Activated:Connect(function() OpenTab(target) end)
+	
+	local Uistrokebtntab = Instance.new("UIStroke")
+	Uistrokebtntab.Color = Color3.fromRGB(255,255,255)
+	Uistrokebtntab.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+	Uistrokebtntab.Thickness = 0.05
+	Uistrokebtntab.StrokeSizingMode = Enum.StrokeSizingMode.ScaledSize
+	Uistrokebtntab.LineJoinMode = Enum.LineJoinMode.Round
+	Uistrokebtntab.Parent = btn
 	return btn
 end
 
 -- Auxiliares de UI
 local function CreateButton(text, parent)
 	local btn = Instance.new("TextButton")
-	btn.Size = UDim2.new(0.95, 0, 0, 35)
-	btn.BackgroundColor3 = Color3.fromRGB(30, 30, 30) -- NÃO deixa transparente
-	btn.BackgroundTransparency = 0
+	btn.Size = UDim2.new(0.791, 0,0.047, 0)
+	btn.BackgroundColor3 = Color3.fromRGB(0, 0, 0) -- NÃO deixa transparente
+	btn.BackgroundTransparency = 0.4
 	btn.Text = text .. ": OFF"
-	btn.TextColor3 = Color3.fromRGB(0, 89, 255)
+	btn.TextColor3 = Color3.fromRGB(255, 255, 255)
 	btn.TextScaled = true
 	btn.Font = Enum.Font.GothamMedium
 	btn.TextSize = 14
@@ -421,6 +436,14 @@ local function CreateButton(text, parent)
 	stroke.Color = Color3.fromRGB(0, 0, 0)
 	stroke.Thickness = 2
 	stroke.Parent = btn
+	
+	local Uistrokebtntab = Instance.new("UIStroke")
+	Uistrokebtntab.Color = Color3.fromRGB(255,255,255)
+	Uistrokebtntab.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+	Uistrokebtntab.Thickness = 0.05
+	Uistrokebtntab.StrokeSizingMode = Enum.StrokeSizingMode.ScaledSize
+	Uistrokebtntab.LineJoinMode = Enum.LineJoinMode.Round
+	Uistrokebtntab.Parent = btn
 
 	-- estado interno
 	local enabled = false
@@ -430,7 +453,7 @@ local function CreateButton(text, parent)
 		enabled = not enabled
 
 		btn.Text = text .. ": " .. (enabled and "ON" or "OFF")
-		stroke.Color = enabled and Color3.fromRGB(0,120,255) or Color3.fromRGB(0,0,0)
+		stroke.Color = enabled and Color3.fromRGB(109, 109, 109) or Color3.fromRGB(0,0,0)
 	end
 
 	btn.Activated:Connect(Toggle)
@@ -468,7 +491,7 @@ end
 
 local function CreateSlider(labelText, min, max, default, parent, callback)
 	local frame = Instance.new("Frame")
-	frame.Size = UDim2.new(0.95, 0, 0, 50)
+	frame.Size = UDim2.new(0.95, 0,0.073, 0)
 	frame.BackgroundTransparency = 1
 	frame.Parent = parent
 
@@ -477,21 +500,22 @@ local function CreateSlider(labelText, min, max, default, parent, callback)
 	label.Text = labelText .. ": " .. default
 	label.TextColor3 = Color3.fromRGB(200,200,200)
 	label.BackgroundTransparency = 1
-	label.TextXAlignment = Enum.TextXAlignment.Left
+	label.TextXAlignment = Enum.TextXAlignment.Center
 	label.Font = Enum.Font.Gotham
 	label.TextSize = 12
+	label.TextScaled = true
 	label.Parent = frame
 
 	local bar = Instance.new("Frame")
 	bar.Size = UDim2.new(1, 0, 0, 10)
 	bar.Position = UDim2.new(0, 0, 0, 25)
-	bar.BackgroundColor3 = Color3.fromRGB(40,40,40)
+	bar.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
 	bar.Parent = frame
 	Instance.new("UICorner", bar)
 
 	local fill = Instance.new("Frame")
 	fill.Size = UDim2.new((default-min)/(max-min), 0, 1, 0)
-	fill.BackgroundColor3 = Color3.fromRGB(0,120,255)
+	fill.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
 	fill.Parent = bar
 	Instance.new("UICorner", fill)
 
@@ -531,41 +555,37 @@ CreateTabBtn("FPS", "FPS")
 CreateTabBtn("Misc", "Misc")
 OpenTab("LocalPlayer")
 
+-- --- CONTEÚDO: LOCALPLAYER ---
 CreateSlider("Velocidade", 10, 1000, 16, LocalPlayerPage, function(val)
 	WalkSpeed_Value = val
 end)
-
+local SpeedToggle = CreateButton("Dis Speed ", LocalPlayerPage)
 CreateSlider("Pulo", 10, 500, 50, LocalPlayerPage, function(val)
 	JumpPower_Value = val
 end)
-
+local JumpToggle = CreateButton("Dis Jump ", LocalPlayerPage)
 CreateSlider("Fly Speed", 10, 750, 50, LocalPlayerPage, function(val)
 	FlySpeed = val
 end)
-
-CreateSlider("SpinSpeed", 10, 300, 75, FPSPage, function(val)
-	SpinSpeed_Value = val
-end)
-
--- --- CONTEÚDO: LOCALPLAYER ---
 local FlyBtn = CreateButton("Voo (Fly) ", LocalPlayerPage)
-local SpeedToggle = CreateButton("Dis Speed ", LocalPlayerPage)
-local JumpToggle = CreateButton("Dis Jump ", LocalPlayerPage)
 local NoclipBtn = CreateButton("Noclip ", LocalPlayerPage)
 local InfJumpBtn = CreateButton("inf Jump ", LocalPlayerPage)
 local TweenBtn = CreateButton("Tween Player (Dis Tp inst) ", LocalPlayerPage) -- novo
 
 -- --- CONTEÚDO: FPS ---
-local SpinCharBtn = CreateButton("Spin Character ", FPSPage)
 local ESPBtn = CreateButton("ESP ", FPSPage)
 local AimbotBtn = CreateButton("Aimbot ", FPSPage)
 local HitboxBtn = CreateButton("Hitbox Gigante ", FPSPage)
+CreateSlider("SpinSpeed", 10, 300, 75, FPSPage, function(val)
+	SpinSpeed_Value = val
+end)
+local SpinCharBtn = CreateButton("Spin Character ", FPSPage)
 
 -- --- Misc
 --local ExecuteDexBtn = CreateButton("Execute Dex", MiscPage)
 --local ExecuteIYBtn = CreateButton("Execute IY", MiscPage)
 local BgColorInput = CreateInput("15,15,15", "Cor do Fundo (R,G,B)", MiscPage)
-local BgTransparencyInput = CreateInput("0-1", "Transparência (0 = sólido, 1 = invisível)", MiscPage)
+--local BgTransparencyInput = CreateInput("0-1", "Transparência (0 = sólido, 1 = invisível)", MiscPage)
 
 --local AutoFireBtn = CreateButton("AutoFire: OFF", FPSPage)
 
@@ -849,20 +869,6 @@ BgColorInput.FocusLost:Connect(function(enterPressed)
 	end
 end)
 
-BgTransparencyInput.FocusLost:Connect(function(enterPressed)
-	if not enterPressed then return end
-
-	local value = tonumber(BgTransparencyInput.Text)
-
-	if value then
-		value = math.clamp(value, 0, 1)
-
-		MainFrame.BackgroundTransparency = value
-	else
-		warn("Use número entre 0 e 1 (ex: 0.3)")
-	end
-end)
-
 -- Noclip & InfJump (Mantidos da V5)
 NoclipBtn.Activated:Connect(function()
 	Noclip_Enabled = not Noclip_Enabled
@@ -905,7 +911,7 @@ LocalPlayer.CharacterAdded:Connect(function(char)
 	ApplyStats(char)
 end)
 
-Players.PlayerAdded:Connect(function(player)
+--[[Players.PlayerAdded:Connect(function(player)
 	UpdatePlayerList()
 end)
 
@@ -913,7 +919,7 @@ Players.PlayerRemoving:Connect(function()
 	UpdatePlayerList()
 end)
 
-UpdatePlayerList()
+UpdatePlayerList()]]
 
 print("Dimitrof04 Hub V3.6 Carregado - Use 'J' para ocultar")
 print("Fly : WASD move L-s abaixar Space Subir")
