@@ -27,6 +27,17 @@ local PosMainJanel = {
 	Max = UDim2.new(0, 0,0.06, 0) -- Não se move
 }
 
+local ImportantesArrays = {
+	TittleBar = {
+		Max = UDim2.new(0.927, 0,1, 0),
+		Janel = UDim2.new(0.922, 0,1, 0)
+	},
+	sizesbuttons = {
+		Max = UDim2.new(0.023, 0, 0.875, 0),
+		Janel = UDim2.new(0.084, 0,0.875, 0)
+	}
+}
+
 -- Inicialização da GUI
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "Dimitrof04Hub"
@@ -64,16 +75,21 @@ local Minimized = false
 local BgR, BgG, BgB = 15, 15, 15
 
 -- MainMiniButton
-local MainMiniButton = Instance.new("TextButton") --butaozinho
+local MainMiniButton = Instance.new("ImageButton") --butaozinho
 MainMiniButton.Name = "MainMiniButton"
 MainMiniButton.Size = UDim2.new(0.061, 0,0.109, 0)
 MainMiniButton.Position = UDim2.new(0.052, 0,0.093, 0)
 MainMiniButton.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
-MainMiniButton.Text = "D04"
-MainMiniButton.TextScaled = true
+MainMiniButton.BackgroundTransparency = 1
+MainMiniButton.Image = "rbxassetid://96272608935524"
 MainMiniButton.BorderSizePixel = 0
 MainMiniButton.Parent = ScreenGui
-Instance.new("UICorner", MainMiniButton).CornerRadius = UDim.new(1,0)
+MainMiniButton.ZIndex = 0
+Instance.new("UICorner", MainMiniButton).CornerRadius = UDim.new(0.3,0)
+
+local UIStrokeMini = Instance.new("UIStroke", MainMiniButton)
+UIStroke.Color = Color3.fromRGB(255, 255, 255)
+UIStroke.Thickness = 2
 
 -- Estrutura da Janela Principal
 local MainFrame = Instance.new("Frame")
@@ -88,15 +104,16 @@ Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 10)
 local OriginalSize = MainFrame.Size
 
 local UIStroke = Instance.new("UIStroke", MainFrame)
-UIStroke.Color = Color3.fromRGB(0, 120, 255)
+UIStroke.Color = Color3.fromRGB(255, 255, 255)
 UIStroke.Thickness = 2
 
 -- Barra de Título
 local TopBar = Instance.new("Frame")
-TopBar.Size = UDim2.new(1, 0, 0, 40)
+TopBar.Size = UDim2.new(0.982, 0,0.089, 0)
 TopBar.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
 TopBar.BorderSizePixel = 0
 TopBar.Parent = MainFrame
+TopBar.Position = UDim2.new(0.018, 0,0, 0)
 Instance.new("UICorner", TopBar).CornerRadius = UDim.new(0, 10)
 
 local ListLayoutTopbar = Instance.new("UIListLayout", TopBar)
@@ -104,10 +121,12 @@ ListLayoutTopbar.FillDirection = Enum.FillDirection.Horizontal
 ListLayoutTopbar.SortOrder = Enum.SortOrder.Name
 ListLayoutTopbar.Wraps = false
 ListLayoutTopbar.VerticalAlignment = Enum.VerticalAlignment.Top
+ListLayoutTopbar.HorizontalAlignment = Enum.HorizontalAlignment.Left
 ListLayoutTopbar.Name = "List"
+ListLayoutTopbar.Padding = UDim.new(0, 0)
 
 local Title = Instance.new("TextLabel")
-Title.Size = UDim2.new(0.976, -100,1, 0)
+Title.Size = ImportantesArrays.TittleBar.Janel
 Title.Position = UDim2.new(0, 15, 0, 0)
 Title.BackgroundTransparency = 1
 Title.Text = "~ Dimitrof04 Hub ~ "
@@ -118,10 +137,8 @@ Title.TextSize = 14
 Title.Parent = TopBar
 Title.Name = "a"
 
-local sizesbuttons = UDim2.new(0.025, 0,0.875, 0)
-
 local CloseBtn = Instance.new("TextButton")
-CloseBtn.Size = sizesbuttons
+CloseBtn.Size = ImportantesArrays.sizesbuttons.Janel
 CloseBtn.Position = UDim2.new(1, -40,0, 2)
 CloseBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
 CloseBtn.BackgroundTransparency = 1
@@ -134,7 +151,7 @@ CloseBtn.Name = "d"
 Instance.new("UICorner", CloseBtn).CornerRadius = UDim.new(0, 5)
 
 local MaxJanelSizebtn = Instance.new("TextButton")
-MaxJanelSizebtn.Size = sizesbuttons
+MaxJanelSizebtn.Size = ImportantesArrays.sizesbuttons.Janel
 MaxJanelSizebtn.Position = UDim2.new(0.855, 0,0.05, 0) -- fica do lado do X
 MaxJanelSizebtn.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
 MaxJanelSizebtn.BackgroundTransparency = 1
@@ -147,7 +164,7 @@ MaxJanelSizebtn.Name = "c"
 Instance.new("UICorner", MaxJanelSizebtn).CornerRadius = UDim.new(0, 5)
 
 local MinBtn = Instance.new("TextButton")
-MinBtn.Size = sizesbuttons
+MinBtn.Size = ImportantesArrays.sizesbuttons.Janel
 MinBtn.Position = UDim2.new(0.791, 0,0.05, 0) -- fica do lado do X
 MinBtn.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
 MinBtn.BackgroundTransparency = 1
@@ -231,9 +248,23 @@ local function TransferirJanela()
 	if IsMaxSize then
 		Animates.MaxSize:Play()
 		MaxJanelSizebtn.Text = "#"
+
+		Title.Size = ImportantesArrays.TittleBar.Max
+		CloseBtn.Size = ImportantesArrays.sizesbuttons.Max
+		MaxJanelSizebtn.Size = ImportantesArrays.sizesbuttons.Max
+		MinBtn.Size = ImportantesArrays.sizesbuttons.Max
+		
+		assert(typeof(Title) == "Instance", "Title deixou de ser Instance")
 	else
 		Animates.MinSize:Play()
 		MaxJanelSizebtn.Text = "[]"
+
+		Title.Size = ImportantesArrays.TittleBar.Janel
+		CloseBtn.Size = ImportantesArrays.sizesbuttons.Janel
+		MaxJanelSizebtn.Size = ImportantesArrays.sizesbuttons.Janel
+		MinBtn.Size = ImportantesArrays.sizesbuttons.Janel
+		
+		assert(typeof(Title) == "Instance", "Title deixou de ser Instance")
 	end
 end
 
