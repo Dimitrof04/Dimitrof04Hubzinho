@@ -11,6 +11,14 @@ local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 local LocalPlayer = Players.LocalPlayer
 local Camera = workspace.CurrentCamera
+local Lighting = game:GetService("Lighting")
+
+local Blur = Lighting:FindFirstChild("Blur")
+if not Blur then
+	Blur = Instance.new("BlurEffect")
+	Blur.Size = 12
+	Blur.Parent = Lighting
+end
 
 -- 1. Verificar se já existe uma GUI e deletar a antiga
 local oldGui = LocalPlayer:WaitForChild("PlayerGui"):FindFirstChild("Dimitrof04Hub")
@@ -51,8 +59,7 @@ script.Parent = ScreenGui
 
 -- --- Variáveis de Estado ---
 -- DRAG DO BOTÃO MINI
-local SeverPlayers = {	
-}
+local SeverPlayers = {}
 
 local States = {
 	draggingMini = false,
@@ -239,32 +246,70 @@ local Animates = {
 			Size = SizesMainJanel.Janel,
 			Position = PosMainJanel.Janel
 		}
-	)
+	),
+	
+	Minimize = TweenService:Create(
+		MainFrame,
+		TweenInfo.new(0.35, Enum.EasingStyle.Quad, Enum.EasingDirection.In),
+		{
+			Size = UDim2.new(0, 0, 0, 0),
+			Position = MainMiniButton.Position,
+			BackgroundTransparency = 1
+		}
+	),
+
+	Open = TweenService:Create(
+		MainFrame,
+		TweenInfo.new(0.35, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+		{
+			Size = SizesMainJanel.Janel,
+			Position = PosMainJanel.Janel,
+			BackgroundTransparency = Values.BgTransparency
+		}
+	),
+	
+	BlurIn = TweenService:Create(
+		Blur,
+		TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+		{ Size = 0 }
+	),
+
+	BlurOut = TweenService:Create(
+		Blur,
+		TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.In),
+		{ Size = 12 }
+	),
 }
 
 local function TransferirJanela()
 	States.IsMaxSize = not States.IsMaxSize
 
+	-- Cancela animações anteriores (evita bug spam click)
+	for _, anim in pairs(Animates) do
+		if typeof(anim) == "Instance" and anim:IsA("Tween") then
+			anim:Cancel()
+		end
+	end
+
 	if States.IsMaxSize then
 		Animates.MaxSize:Play()
 		MaxJanelSizebtn.Text = "#"
 
+		-- Ajuste UI
 		Title.Size = ImportantesArrays.TitleBar.Max
 		CloseBtn.Size = ImportantesArrays.sizesbuttons.Max
 		MaxJanelSizebtn.Size = ImportantesArrays.sizesbuttons.Max
 		MinBtn.Size = ImportantesArrays.sizesbuttons.Max
 
-		assert(typeof(Title) == "Instance", "Title deixou de ser Instance")
 	else
 		Animates.MinSize:Play()
 		MaxJanelSizebtn.Text = "[]"
 
+		-- Ajuste UI
 		Title.Size = ImportantesArrays.TitleBar.Janel
 		CloseBtn.Size = ImportantesArrays.sizesbuttons.Janel
 		MaxJanelSizebtn.Size = ImportantesArrays.sizesbuttons.Janel
 		MinBtn.Size = ImportantesArrays.sizesbuttons.Janel
-
-		assert(typeof(Title) == "Instance", "Title deixou de ser Instance")
 	end
 end
 
@@ -310,8 +355,66 @@ local function ToggleState(key, btn, label)
 	btn.Text = label .. ": " .. (States[key] and "ON" or "OFF")
 end
 
+local LastStateBeforeMinimize = {
+	Size = SizesMainJanel.Janel,
+	Position = PosMainJanel.Janel,
+	IsMax = false
+}
+
 local function MinizeWindows()
-	MainFrame.Visible  = not MainFrame.Visible
+	States.Minimized = not States.Minimized
+
+	if States.Minimized then
+		-- Salva estado atual
+		LastStateBeforeMinimize.Size = MainFrame.Size
+		LastStateBeforeMinimize.Position = MainFrame.Position
+		LastStateBeforeMinimize.IsMax = States.IsMaxSize
+
+		-- Blur entra
+		Animates.BlurIn:Play()
+
+		-- Minimizar
+		Animates.Minimize:Play()
+
+		Animates.Minimize.Completed:Once(function()
+			MainFrame.Visible = false
+		end)
+
+	else
+		MainFrame.Visible = true
+
+		-- Começa do botão
+		MainFrame.Size = UDim2.new(0,0,0,0)
+		MainFrame.Position = MainMiniButton.Position
+		MainFrame.BackgroundTransparency = 1
+
+		Animates.BlurOut:Play()
+
+		-- Decide qual animação usar
+		if LastStateBeforeMinimize.IsMax then
+			-- já abre direto com tween de maximizar
+			Animates.MaxSize:Play()
+
+			MaxJanelSizebtn.Text = "#"
+
+			Title.Size = ImportantesArrays.TitleBar.Max
+			CloseBtn.Size = ImportantesArrays.sizesbuttons.Max
+			MaxJanelSizebtn.Size = ImportantesArrays.sizesbuttons.Max
+			MinBtn.Size = ImportantesArrays.sizesbuttons.Max
+		else
+			-- abre como janela normal
+			Animates.MinSize:Play()
+
+			MaxJanelSizebtn.Text = "[]"
+
+			Title.Size = ImportantesArrays.TitleBar.Janel
+			CloseBtn.Size = ImportantesArrays.sizesbuttons.Janel
+			MaxJanelSizebtn.Size = ImportantesArrays.sizesbuttons.Janel
+			MinBtn.Size = ImportantesArrays.sizesbuttons.Janel
+		end
+
+		States.IsMaxSize = LastStateBeforeMinimize.IsMax
+	end
 end
 
 local function AutoShoot()
@@ -463,7 +566,7 @@ local ESPBtn = CreateButtonInput("ESP", FPSPage, "ESP_Enabled")
 CreateSlider("AimbotForce", 300, 750, 400, FPSPage, function(val)
 	Values.FOV = val
 end)
-local AimbotBtn = CreateButtonInput("Aimbot", FPSPage, "Aimbot_Enabled")
+local AimbotBtn = CreateButtonInput("Aimbot", FPSPage, "Aimbot_Enabledj")
 CreateSlider("SpinSpeed", 10, 300, 75, FPSPage, function(val)
 	Values.SpinSpeed = val
 end)
