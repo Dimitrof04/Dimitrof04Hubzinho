@@ -23,9 +23,11 @@ if not Blur then
 end
 
 -- 1. Verificar se já existe uma GUI e deletar a antiga
-local oldGui = LocalPlayer:WaitForChild("PlayerGui"):FindFirstChild("Dimitrof04Hub")
-if oldGui then
-	oldGui:Destroy()
+local oldGui = LocalPlayer:FindFirstChild("PlayerGui"):FindFirstChild("Dimitrof04Hub")
+local Oldgui2 = LocalPlayer:FindFirstChild("PlayerGui"):FindFirstChild("Dimitrof04List")
+
+if oldGui and Oldgui2 then
+	script:Destroy()
 end
 
 local SizesMainJanel = {
@@ -50,19 +52,21 @@ local ImportantesArrays = {
 }
 
 -- Inicialização da GUI
-local ScreenGui = Instance.new("ScreenGui")
+local ScreenGui = Instance.new("ScreenGui", LocalPlayer:WaitForChild("PlayerGui"))
 ScreenGui.Name = "Dimitrof04Hub"
-ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
 ScreenGui.ResetOnSpawn = false
 ScreenGui.IgnoreGuiInset = true
 ScreenGui.DisplayOrder = 35
 
-script.Parent = ScreenGui
+local ListScrenguis = Instance.new("ScreenGui", ScreenGui.Parent)
+ListScrenguis.Name = "Dimitrof04HubList"
+ListScrenguis.ResetOnSpawn = false
+ListScrenguis.IgnoreGuiInset = true
+ListScrenguis.DisplayOrder = 90
+ListScrenguis.Enabled = true
 
 -- --- Variáveis de Estado ---
 -- DRAG DO BOTÃO MINI
-local SeverPlayers = {}
-
 local States = {
 	draggingMini = false,
 	IsMaxSize = false,
@@ -79,6 +83,8 @@ local States = {
 	Fly_Enabled = false,
 	Minimized = false,
 	BlurScript_enabled = false,
+	debounce = false,
+	SoloPLayer = true
 }
 
 local Values = {
@@ -88,7 +94,8 @@ local Values = {
 	FlySpeed = 50,
 	AimSmoothness = 0.2,
 	FOV = 500,
-	BgTransparency = 0.6
+	BgTransparency = 0.6,
+	SelectedPlayer = nil
 }
 
 local DragData = {
@@ -104,7 +111,7 @@ local function CreateUiStroke(parent, size, color)
 	Uistrokebtntab.StrokeSizingMode = Enum.StrokeSizingMode.ScaledSize
 	Uistrokebtntab.LineJoinMode = Enum.LineJoinMode.Round
 	Uistrokebtntab.Parent = parent
-	
+
 	return Uistrokebtntab
 end
 
@@ -131,7 +138,7 @@ local function CreateUiList(Parent, VA, HA, Wraps, Sortorder, FD)
 	List.HorizontalAlignment = HA
 	List.Name = "List"
 	List.Padding = UDim.new(0, 0)
-	
+
 	return List
 end
 
@@ -148,7 +155,7 @@ local function CreateUiText(TextLabel, Parent, pos, siz)
 	Text.TextScaled = false
 	Text.Parent = Parent
 	Text.Name = "TextLabel"
-	
+
 	return Text
 end
 
@@ -164,7 +171,7 @@ local function CreateUiTextButton(Text ,Parent, pos, siz)
 	TextButton.Font = Enum.Font.SourceSans
 	TextButton.TextScaled = false
 	TextButton.Name = "TextButton"
-	
+
 	return TextButton
 end
 
@@ -182,7 +189,7 @@ local function InitScript()
 	MainMiniButton.ZIndex = 0
 	Instance.new("UICorner", MainMiniButton).CornerRadius = UDim.new(0.3,0)
 	CreateUiStroke(MainMiniButton, 0.03, Color3.fromRGB(71, 71, 71))
-	
+
 	-- Estrutura da Janela Principal
 	local MainFrame = CreateUiFrame(ScreenGui, PosMainJanel.Janel, SizesMainJanel.Janel)
 	MainFrame.BackgroundTransparency = Values.BgTransparency
@@ -196,7 +203,6 @@ local function InitScript()
 	local ListLayoutTopbar = CreateUiList(TopBar, Enum.VerticalAlignment.Top, Enum.HorizontalAlignment.Left, false, Enum.SortOrder.Name, Enum.FillDirection.Horizontal)
 
 	local Title = CreateUiText("~ Dimitrof04 Hub ~ ", TopBar, UDim2.new(0,0,0,0), ImportantesArrays.TitleBar.Janel)
-	Title.BackgroundTransparency = 1
 	Title.TextXAlignment = Enum.TextXAlignment.Left
 	Title.Font = Enum.Font.GothamBold
 	Title.Name = "a"
@@ -232,6 +238,8 @@ local function InitScript()
 	local LocalPlayerPage = Instance.new("ScrollingFrame")
 	local FPSPage = Instance.new("ScrollingFrame")
 	local MiscPage = Instance.new("ScrollingFrame")
+	local PlayerPage = Instance.new("ScrollingFrame")
+	local Monkeytag = Instance.new("ScrollingFrame")
 
 	local Animates = {
 		MaxSize = TweenService:Create(
@@ -334,6 +342,8 @@ local function InitScript()
 		LocalPlayerPage.Visible = (tabName == "LocalPlayer")
 		FPSPage.Visible = (tabName == "FPS")
 		MiscPage.Visible = (tabName == "Misc")
+		PlayerPage.Visible = (tabName == "Player")
+		Monkeytag.Visible = (tabName == "Monkeytag")
 	end
 
 	local function GetClosestPlayer()
@@ -367,7 +377,7 @@ local function InitScript()
 
 	local function MinizeWindows()
 		States.Minimized = not States.Minimized
-		
+
 		States.IsMaxSize = LastStateBeforeMinimize.IsMax
 
 		if States.Minimized then
@@ -486,6 +496,17 @@ local function InitScript()
 		return btn
 	end
 
+	local function CreateOneButton(text, parent)
+		local btn = CreateUiTextButton(text, parent, UDim2.new(0,0,0,0), UDim2.new(0.791, 0,0.047, 0))
+		btn.TextScaled = true
+		btn.Font = Enum.Font.GothamMedium
+		Instance.new("UICorner", btn).CornerRadius = UDim.new(0.1, 0)
+
+		CreateUiStroke(btn, 0.1)
+
+		return btn
+	end
+
 	local function CreateInput(placeholder, labelText, parent)
 		local frame = CreateUiFrame(parent, UDim2.new(0,0,0,0), UDim2.new(0.95, 0,0.073, 0))
 		local lbl = CreateUiText(labelText, frame, UDim2.new(0,0,0,0), UDim2.new(1,0,0.1,0))
@@ -549,13 +570,62 @@ local function InitScript()
 		end)
 	end
 
+	local function CreateList(Parent, text, namelist)
+		local btn = CreateUiTextButton(string.format("< %s >", text), Parent, UDim2.new(0,0,0,0), UDim2.new(0.791, 0,0.047, 0))
+		btn.Font = Enum.Font.Gotham
+		btn.TextScaled = true
+
+		Instance.new("UICorner", btn).CornerRadius = UDim.new(0.1, 0)
+
+		CreateUiStroke(btn, 0.1)
+
+		local ListFrame = CreateUiFrame(ListScrenguis, UDim2.new(0,0,0,0), UDim2.new(1,0,1,0))
+		ListFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+		ListFrame.BackgroundTransparency = 0.6
+		ListFrame.Visible = false
+
+		CreateUiList(ListFrame, Enum.VerticalAlignment.Center, Enum.HorizontalAlignment.Center, true, Enum.SortOrder.Name, Enum.FillDirection.Vertical).Padding = UDim.new(0.03,0)
+
+		local function CreateButtonList(name, text)
+			local button = ListFrame:FindFirstChild(name)
+			if not button then
+				button = CreateUiTextButton(text, ListFrame, UDim2.new(0.156, 0,0.07, 0), UDim2.new(0.156, 0,0.07, 0))
+				button.Name = name
+				button.TextScaled = true
+				button.Font = Enum.Font.Gotham
+				button.Visible = true
+
+				CreateUiStroke(button, 0.075)
+				Instance.new("UICorner", button).CornerRadius = UDim.new(1,0)
+			end
+			return button
+		end
+
+		local function DeleteButtonList(name)
+			local Dbutton = ListFrame:FindFirstChild(name)
+			if Dbutton then
+				Dbutton:Destroy()
+			end
+		end
+
+		return {
+			Create = CreateButtonList,
+			Delete = DeleteButtonList,	
+			Frame = ListFrame, -- opcional
+			Button = btn
+		}
+	end
+
 	SetupPage(LocalPlayerPage)
 	SetupPage(FPSPage)
 	SetupPage(MiscPage)
+	SetupPage(PlayerPage)
 
-	CreateTabBtn("LocalPlayer", "LocalPlayer")
-	CreateTabBtn("FPS", "FPS")
-	CreateTabBtn("Misc", "Misc")
+	CreateTabBtn("👾LocalPlayer", "LocalPlayer")
+	CreateTabBtn("🙎‍Player", "Player")
+	CreateTabBtn("🔫FPS", "FPS")
+	CreateTabBtn("⚙️Misc", "Misc")
+	
 	OpenTab("LocalPlayer")
 
 	-- --- CONTEÚDO: LOCALPLAYER ---
@@ -573,29 +643,32 @@ local function InitScript()
 	local FlyBtn = CreateButtonInput("Fly", LocalPlayerPage, "Fly_Enabled")
 	local NoclipBtn = CreateButtonInput("Noclip", LocalPlayerPage, "Noclip_Enabled")
 	local InfJumpBtn = CreateButtonInput("Inf Jump", LocalPlayerPage, "InfJump_Enabled")
-	--local TweenBtn = CreateButtonInput("Tween Player (Dis Tp inst) ", LocalPlayerPage) -- novo
+
+	-- -- Player
+	local Player = CreateInput("Player", "Select Player", PlayerPage)
+	local PlayersListButton = CreateList(PlayerPage,"PlayerList","PlayersListButton")
+	local TeleportBtn = CreateOneButton("Teleport", PlayerPage)
+	local TweenPlayerBtn = CreateButtonInput("Tween", PlayerPage, "TweenTP_Enabled")
 
 	-- --- CONTEÚDO: FPS ---
 	local ESPBtn = CreateButtonInput("ESP", FPSPage, "ESP_Enabled")
 	CreateSlider("AimbotForce", 300, 750, 400, FPSPage, function(val)
 		Values.FOV = val
 	end)
-	local AimbotBtn = CreateButtonInput("Aimbot", FPSPage, "Aimbot_Enabledj")
+	local AimbotBtn = CreateButtonInput("Aimbot", FPSPage, "Aimbot_Enabled")
 	CreateSlider("SpinSpeed", 10, 300, 75, FPSPage, function(val)
 		Values.SpinSpeed = val
 	end)
+
 	local SpinCharBtn = CreateButtonInput("Spin", FPSPage, "Spin_Enabled")
 
-	-- --- Misc
-	--local ExecuteDexBtn = CreateButtonInput("Execute Dex", MiscPage)
-	--local ExecuteIYBtn = CreateButtonInput("Execute IY", MiscPage)
+	-- --- Misc ---
 	local BgColorInput = CreateInput("15,15,15", "Cor do Fundo (R,G,B)", MiscPage)
 	CreateSlider("Background Transparancy", 0, 100, Values.BgTransparency * 100, MiscPage, function(val)
 		Values.BgTransparency = val
 		MainFrame.BackgroundTransparency = val / 100
 	end)
-	--local BgTransparencyInput = CreateInput("0-1", "Transparência (0 = sólido, 1 = invisível)", MiscPage)
-
+	
 	--local AutoFireBtn = CreateButtonInput("AutoFire: OFF", FPSPage)
 
 	-- --- LÓGICA DE MOVIMENTAÇÃO ---
@@ -790,7 +863,7 @@ local function InitScript()
 				DragData.startPosMini.X.Offset + delta.X,
 				DragData.startPosMini.Y.Scale,
 				DragData.startPosMini.Y.Offset + delta.Y
-			)
+			)	
 		end
 	end)
 
@@ -804,7 +877,7 @@ local function InitScript()
 	-- Atalho para abrir/fechar
 	UserInputService.InputBegan:Connect(function(input, gpe)
 		if not gpe and input.KeyCode == Enum.KeyCode.J then
-			MinizeWindows()
+		MinizeWindows()	J
 		end
 	end)
 
@@ -817,6 +890,45 @@ local function InitScript()
 	end)
 
 	CloseBtn.Activated:Connect(function() ScreenGui:Destroy() end)
+
+	TeleportBtn.Activated:Connect(function()
+		if States.debounce then return end
+		States.debounce = true
+
+		local target = Players:FindFirstChild(Player.Text)
+
+		if not target then return end
+		if not target.Character then return end
+		if not target.Character:FindFirstChild("HumanoidRootPart") then return end
+		if not LocalPlayer.Character then return end
+		if not LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then return end
+
+		local targetPos = target.Character.HumanoidRootPart.Position + Vector3.new(0, 3, 0)
+		local myHRP = LocalPlayer.Character.HumanoidRootPart
+
+		PlayersListButton.Frame.Visible = false
+
+		-- 💡 MODO INSTANTÂNEO
+		if not States.TweenTP_Enabled then
+			myHRP.CFrame = CFrame.new(targetPos)
+			States.debounce = false
+			return
+		end
+
+		-- 💡 MODO TWEEN (suave)
+		local tweenInfo = TweenInfo.new(
+			1, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out
+		)
+
+		local tween = TweenService:Create(myHRP, tweenInfo, {
+			CFrame = CFrame.new(targetPos)
+		})
+
+		tween:Play()
+		tween.Completed:Wait()
+
+		States.debounce = false
+	end)
 
 	BgColorInput.FocusLost:Connect(function(enterPressed)
 		if not enterPressed then return end
@@ -839,6 +951,19 @@ local function InitScript()
 		end
 	end)
 
+	Player.FocusLost:Connect(function(enterPressed)
+		if not enterPressed then return end
+
+		local name = Player.Text
+		local plr = Players:FindFirstChild(name)
+
+		if plr then
+			Values.SelectedPlayer = plr
+		else
+			warn("Player não encontrado")
+		end
+	end)
+
 	MaxJanelSizebtn.Activated:Connect(function()
 		TransferirJanela()
 	end)
@@ -850,15 +975,34 @@ local function InitScript()
 		ApplyStats(char)
 	end)
 
---[[Players.PlayerAdded:Connect(function(player)
-	UpdatePlayerList()
-end)
+	local function CreateTeleportbutton(p)
+		local btn = PlayersListButton.Create(p.Name, p.Name)
+		
+		btn.Activated:Connect(function()
+			Player.Text = p.Name
+			
+			PlayersListButton.Frame.Visible = false
+		end)
+	end
+	
+	Players.PlayerAdded:Connect(function(player)
+		if player ~= LocalPlayer then
+			CreateTeleportbutton(player)
+		end
+	end)
 
-Players.PlayerRemoving:Connect(function()
-	UpdatePlayerList()
-end)
-
-UpdatePlayerList()]]
+	-- quando sai
+	Players.PlayerRemoving:Connect(function(player)
+		PlayersListButton.Delete(player.Name)
+	end)
+	
+	-- players que já estão no jogo
+	for _, player in pairs(Players:GetPlayers()) do
+		if player and not LocalPlayer then
+			CreateTeleportbutton(player)
+			States.SoloPLayer = false
+		end
+	end
 end
 
 if not Blur then
@@ -891,7 +1035,7 @@ if not Blur then
 
 	local function Initt()
 		AlertBlurjanel:Destroy()
-		
+
 		InitScript()
 	end
 
