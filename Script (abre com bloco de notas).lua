@@ -4,6 +4,9 @@
 	-- use com moderacao
 	-- algumas funcoes pode nao ta funcionando pois esta em fase de teste
 	-- killaura // autofire funciona apenas se a tool tiver Remoteevent!!!
+	
+	-- Aimbot, Playerlist.Create
+	-- Novo : : AutoTeleport
 ]]
 local TweenService = game:GetService("TweenService")
 local Players = game:GetService("Players")
@@ -12,6 +15,7 @@ local UserInputService = game:GetService("UserInputService")
 local LocalPlayer = Players.LocalPlayer
 local Camera = workspace.CurrentCamera
 local Lighting = game:GetService("Lighting")
+local Teams = game:GetService("Teams")
 
 local haveblur = true
 
@@ -26,7 +30,7 @@ end
 local oldGui = LocalPlayer:FindFirstChild("PlayerGui"):FindFirstChild("Dimitrof04Hub")
 local Oldgui2 = LocalPlayer:FindFirstChild("PlayerGui"):FindFirstChild("Dimitrof04List")
 
-if oldGui and Oldgui2 then
+if oldGui or Oldgui2 then
 	script:Destroy()
 end
 
@@ -84,7 +88,9 @@ local States = {
 	Minimized = false,
 	BlurScript_enabled = false,
 	debounce = false,
-	SoloPLayer = true
+	SoloPLayer = true,
+	AntiBombs = false,
+	AutoCollectBananas = false,
 }
 
 local Values = {
@@ -359,8 +365,8 @@ local function InitScript()
 					end
 				end
 			end
-			task.wait(0.1)
 		end
+		task.wait(0.1)
 		return closest
 	end
 
@@ -467,7 +473,8 @@ local function InitScript()
 		Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
 		btn.Activated:Connect(function() OpenTab(target) end)
 
-		local Uistrokebtntab = CreateUiStroke(btn, 0.075)
+		CreateUiStroke(btn, 0.075)
+		
 		return btn
 	end
 
@@ -620,11 +627,13 @@ local function InitScript()
 	SetupPage(FPSPage)
 	SetupPage(MiscPage)
 	SetupPage(PlayerPage)
+	SetupPage(Monkeytag)
 
 	CreateTabBtn("👾LocalPlayer", "LocalPlayer")
 	CreateTabBtn("🙎‍Player", "Player")
 	CreateTabBtn("🔫FPS", "FPS")
 	CreateTabBtn("⚙️Misc", "Misc")
+	local MonkeytagBtn = CreateTabBtn("🍌 Monkey Tag 💣")
 	
 	OpenTab("LocalPlayer")
 
@@ -736,6 +745,14 @@ local function InitScript()
 
 	local folder = Instance.new("Folder", workspace)
 	folder.Name = "ESP_FOLDER"
+	
+	local cachedTarget = nil
+	
+	task.spawn(function()
+		while task.wait(0.15) do
+			cachedTarget = GetClosestPlayer()
+		end
+	end)	
 
 	RunService.RenderStepped:Connect(function()
 
@@ -877,7 +894,7 @@ local function InitScript()
 	-- Atalho para abrir/fechar
 	UserInputService.InputBegan:Connect(function(input, gpe)
 		if not gpe and input.KeyCode == Enum.KeyCode.J then
-		MinizeWindows()	J
+		MinizeWindows()
 		end
 	end)
 
@@ -958,7 +975,7 @@ local function InitScript()
 		local plr = Players:FindFirstChild(name)
 
 		if plr then
-			Values.SelectedPlayer = plr
+			Player.Text = plr.Name
 		else
 			warn("Player não encontrado")
 		end
@@ -985,6 +1002,10 @@ local function InitScript()
 		end)
 	end
 	
+	PlayersListButton.Button.Activated:Connect(function()
+		PlayersListButton.Frame.Visible = not PlayersListButton.Frame.Visible
+	end)
+	
 	Players.PlayerAdded:Connect(function(player)
 		if player ~= LocalPlayer then
 			CreateTeleportbutton(player)
@@ -998,14 +1019,118 @@ local function InitScript()
 	
 	-- players que já estão no jogo
 	for _, player in pairs(Players:GetPlayers()) do
-		if player and not LocalPlayer then
+		if player ~= LocalPlayer then
 			CreateTeleportbutton(player)
 			States.SoloPLayer = false
 		end
 	end
+	
+	local Bananas = workspace:FindFirstChild("Bananas") or false
+	local Runners = Teams:FindFirstChild("Runners") or false
+	local Bomb = Teams:FindFirstChild("Bomb") or false
+	
+	local function initMonkeyScript()
+		local LoopingActived = false
+		local BananaLoop = false
+
+		local function AutoCollectBananas()
+			for _, banana in pairs(Bananas:GetChildren()) do
+				if not Bananas then return end
+				
+				if not States.AutoCollectBananas then
+					break
+				end
+
+				if banana:IsA("BasePart") or banana:IsA("MeshPart") then
+					local TargtPos = banana.Position
+					local myHRP = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+					if myHRP and TargtPos then
+						myHRP.Position = TargtPos
+					end
+				end
+
+				task.wait(0.2)
+			end
+
+			BananaLoop = false
+		end
+
+		local function AntiBomb()
+			while States.AntiBombs do
+				local character = LocalPlayer.Character
+				local PlayerTeam = LocalPlayer.Team
+
+				if character and PlayerTeam == Bomb then
+					local hrp = character:FindFirstChild("HumanoidRootPart")
+					if not hrp then return end
+
+					local humanoid = character:FindFirstChild("Humanoid")
+					if humanoid and humanoid.Health <= 0 then
+						break
+					end
+
+					local players = Bomb:GetPlayers()
+
+					-- filtra players válidos
+					local validTargets = {}
+
+					for _, plr in ipairs(players) do
+						if plr ~= LocalPlayer 
+							and plr.Character 
+							and plr.Character:FindFirstChild("HumanoidRootPart") then
+
+							table.insert(validTargets, plr)
+						end
+					end
+					-- se tiver alguém pra teleportar
+					if #validTargets > 0 then
+						local target = validTargets[math.random(1, #validTargets)]
+						local targetHRP = target.Character.HumanoidRootPart
+						if not States.TweenTP_Enabled then
+							-- teleporte (leve offset pra não bugar)
+							hrp.CFrame = targetHRP.CFrame * CFrame.new(0, 0, 3)
+						else
+							local tween = TweenService:Create(
+								hrp,
+								TweenInfo.new(0.2),
+								{CFrame = targetHRP.CFrame}
+							)
+
+							tween:Play()
+						end
+					end
+				end
+				task.wait(0.3)
+			end
+		end
+
+		Bananas.ChildAdded:Connect(function()
+			if States.AutoCollectBananas then
+				AutoCollectBananas()
+			end
+		end)
+
+		local AutoCollectBananaBtn = CreateButtonInput("AutoCollectBananas", Monkeytag, "AutoCollectBananas")
+		local AntiBombSelfBtn = CreateButtonInput("AntiBomb ", Monkeytag, "AntiBombs")
+
+		AutoCollectBananaBtn.Activated:Connect(function()
+			AutoCollectBananas()
+		end)
+
+		AntiBombSelfBtn.Activated:Connect(function()
+			AntiBomb()
+		end)
+	end
+	
+	MonkeytagBtn.Visible = false
+	
+	if Bananas and Runners and Bomb then
+		initMonkeyScript()
+		MonkeytagBtn.Visible = true
+	end
 end
 
-if not Blur then
+if haveblur then
 	local AlertBlurjanel = CreateUiFrame(ScreenGui, UDim2.new(0.299, 0,0.291, 0), UDim2.new(0.401, 0,0.417, 0))
 	AlertBlurjanel.BackgroundTransparency = 0.6
 
