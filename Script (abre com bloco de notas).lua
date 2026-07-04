@@ -7,6 +7,7 @@
 	
 	-- Aimbot, Playerlist.Create
 	-- Novo : : AutoTeleport
+	-- https://github.com/ViegPhunt/Arch-Hyprland
 ]]
 local TweenService = game:GetService("TweenService")
 local Players = game:GetService("Players")
